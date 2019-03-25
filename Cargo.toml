@@ -5,6 +5,6 @@ authors = ["Patrick Monaghan <0x5f.manpat@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-# common = { git = "https://github.com/manpat/common-rs.git" }
-common = { path = "../common-rs" }
+common = { git = "https://github.com/manpat/common-rs.git" }
+# common = { path = "../common-rs" }
 failure = "0.1.1"
