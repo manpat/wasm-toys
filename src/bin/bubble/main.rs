@@ -60,7 +60,7 @@ impl engine::EngineClient for Bubble {
 			gl::enable(gl::Capability::StencilTest);
 			gl::stencil_mask(0xFF);
 
-			let (r,g,b,_) = Color::hsv(0.0, 0.0, 0.0).to_tuple();
+			let (r,g,b,_) = Color::hsv(301.0, 0.46, 0.28).to_tuple();
 
 			gl::clear_color(r, g, b, 1.0);
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
@@ -110,5 +110,8 @@ impl engine::EngineClient for Bubble {
 		set_stencil(StencilParams::new(1).equal());
 
 		self.scene.draw(gl::DrawMode::Triangles);
+
+		// TODO bubble shine
+		// TODO floaties
 	}
 }
