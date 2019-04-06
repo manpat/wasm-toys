@@ -78,6 +78,24 @@ pub fn internal_handle_mouse_move(x: i32, y: i32, dx: i32, dy: i32) -> bool {
 }
 
 #[no_mangle]
+pub fn internal_handle_touch_down(id: i32, x: i32, y: i32) -> bool {
+	get_engine_mut().input.register_touchdown(id, x, y);
+	true
+}
+
+#[no_mangle]
+pub fn internal_handle_touch_up(id: i32, x: i32, y: i32) -> bool {
+	get_engine_mut().input.register_touchup(id, x, y);
+	true
+}
+
+#[no_mangle]
+pub fn internal_handle_touch_move(id: i32, x: i32, y: i32) -> bool {
+	get_engine_mut().input.register_touchmove(id, x, y);
+	false
+}
+
+#[no_mangle]
 pub fn internal_handle_focus_gain() {
 	get_engine_mut().input.reset_inputs();
 }

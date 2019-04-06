@@ -56,15 +56,29 @@ pub enum ButtonState {
 }
 
 
+#[derive(Copy, Clone)]
+struct TouchInstance {
+	id: i32,
+	index: u32,
+	pos: Vec2i,
+	frame_delta: Vec2i,
+}
+
+
 pub struct InputContext {
 	key_states: [ButtonState; KeyCode::Count as usize],
 	mb_states: [ButtonState; MouseButton::Count as usize],
-	pub mouse_pos: Vec2i,
-	pub mouse_delta: Vec2i,
+	touch_states: Vec<TouchInstance>,
+
+	// TODO: probably improve this
+	pub(crate) mouse_pos: Vec2i,
+	pub(crate) mouse_delta: Vec2i,
 
 	is_pointer_locked: bool,
 	should_pointer_lock: bool,
-	pub pointer_lock_allowed: bool,
+	pub(crate) pointer_lock_allowed: bool,
+
+	touch_mode: bool,
 
 	intent_map: [Vec<Button>; Intent::Count as usize],
 }
@@ -75,12 +89,16 @@ impl InputContext {
 		InputContext {
 			key_states: [ButtonState::Up; KeyCode::Count as usize],
 			mb_states: [ButtonState::Up; MouseButton::Count as usize],
+			touch_states: Vec::new(),
+
 			mouse_pos: Vec2i::zero(),
 			mouse_delta: Vec2i::zero(),
 
 			is_pointer_locked: false,
 			should_pointer_lock: false,
 			pointer_lock_allowed: false,
+
+			touch_mode: false,
 			
 			intent_map: [
 				// Up
@@ -123,6 +141,10 @@ impl InputContext {
 		for state in self.mb_states.iter_mut() {
 			*state = state.recent_flag_cleared();
 		}
+
+		for state in self.touch_states.iter_mut() {
+			state.frame_delta = Vec2i::zero();
+		}
 	}
 
 	pub fn reset_inputs(&mut self) {
@@ -133,6 +155,8 @@ impl InputContext {
 		for state in self.mb_states.iter_mut() {
 			*state = ButtonState::Up;
 		}
+
+		self.touch_states.clear();
 	}
 
 	pub fn button_state(&self, b: Button) -> ButtonState {
@@ -182,6 +206,30 @@ impl InputContext {
 		acc_state
 	}
 
+	// TODO: Use ButtonState here
+	pub fn primary_down(&self) -> bool {
+		if self.touch_mode {
+			self.touch_states.first()
+				.map(|s| s.index == 0)
+				.unwrap_or(false)
+		} else {
+			self.button_state(MouseButton::Left.into())
+				.is_down()
+		}
+	}
+
+	pub fn primary_delta(&self) -> Vec2i {
+		if self.touch_mode {
+			self.touch_states.first()
+				.filter(|s| s.index == 0)
+				.map(|s| s.frame_delta)
+				.unwrap_or(Vec2i::zero())
+		} else {
+			self.mouse_delta
+		}
+	}
+
+
 	pub fn enable_pointer_lock(&mut self, e: bool) {
 		self.should_pointer_lock = e;
 
@@ -193,7 +241,7 @@ impl InputContext {
 
 	pub fn is_pointer_locked(&self) -> bool { self.is_pointer_locked }
 
-	pub fn register_keydown(&mut self, code: KeyCode) {
+	pub(crate) fn register_keydown(&mut self, code: KeyCode) {
 		let s = &mut self.key_states[code as usize];
 		if s.is_up() { *s = ButtonState::DownRecent }
 
@@ -202,7 +250,7 @@ impl InputContext {
 		}
 	}
 
-	pub fn register_keyup(&mut self, code: KeyCode) {
+	pub(crate) fn register_keyup(&mut self, code: KeyCode) {
 		let s = &mut self.key_states[code as usize];
 		if s.is_down() { *s = ButtonState::UpRecent }
 		
@@ -211,21 +259,52 @@ impl InputContext {
 		}
 	}
 
-	pub fn register_mousedown(&mut self, mb: MouseButton, x: i32, y: i32) {
+	pub(crate) fn register_mousedown(&mut self, mb: MouseButton, x: i32, y: i32) {
+		self.touch_mode = false;
+
 		let s = &mut self.mb_states[mb as usize];
 		if s.is_up() { *s = ButtonState::DownRecent }
 		self.mouse_pos = Vec2i::new(x, y);
 		self.try_set_pointer_lock();
 	}
 
-	pub fn register_mouseup(&mut self, mb: MouseButton, x: i32, y: i32) {
+	pub(crate) fn register_mouseup(&mut self, mb: MouseButton, x: i32, y: i32) {
 		let s = &mut self.mb_states[mb as usize];
 		if s.is_down() { *s = ButtonState::UpRecent }
 		self.mouse_pos = Vec2i::new(x, y);
 		self.try_set_pointer_lock();
 	}
 
-	pub fn register_pointer_lock_change(&mut self, enabled: bool) {
+	pub(crate) fn register_touchdown(&mut self, id: i32, x: i32, y: i32) {
+		self.touch_mode = true;
+
+		// TODO: check if id already exists and move to end
+
+		let index = self.touch_states.len() as u32;
+		self.touch_states.push(TouchInstance {
+			id,
+			pos: Vec2i::new(x, y),
+			frame_delta: Vec2i::zero(),
+			index,
+		});
+	}
+
+	pub(crate) fn register_touchup(&mut self, id: i32, _x: i32, _y: i32) {
+		// TODO: a way to track touch up events
+		self.touch_states.retain(|s| s.id != id);
+	}
+
+	pub(crate) fn register_touchmove(&mut self, id: i32, x: i32, y: i32) {
+		if let Some(state) = self.touch_states.iter_mut().find(|s| s.id == id) {
+			let new_pos = Vec2i::new(x, y);
+			let diff = new_pos - state.pos;
+
+			state.pos = new_pos;
+			state.frame_delta += diff;
+		}
+	}
+
+	pub(crate) fn register_pointer_lock_change(&mut self, enabled: bool) {
 		self.is_pointer_locked = enabled;
 	}
 

@@ -69,8 +69,9 @@ impl engine::EngineClient for Bubble {
 
 
 		// spin
-		if ctx.input.intent_state(input::Intent::Primary).is_down() {
-			let delta = -ctx.input.mouse_delta.x as f32 * PI / ctx.viewport.y as f32;
+		if ctx.input.primary_down() {
+			let raw_delta = ctx.input.primary_delta();
+			let delta = -raw_delta.x as f32 * PI / ctx.viewport.y as f32;
 			self.yaw_vel += (delta - self.yaw_vel) / 5.0;
 
 		} else {
@@ -78,7 +79,6 @@ impl engine::EngineClient for Bubble {
 		}
 
 		self.yaw += self.yaw_vel;
-
 
 
 		// position camera

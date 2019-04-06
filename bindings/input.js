@@ -33,7 +33,6 @@ const Intent = create_enum([
 engine_internal.input_module = {
 	init: function (canvas) {
 		// No context menus pls
-		// TODO: forward to engine in editor mode
 		document.addEventListener('contextmenu', (e) => e.preventDefault(), true);
 
 		// Defer binding so engine has a chance to init
@@ -46,10 +45,9 @@ engine_internal.input_module = {
 			document.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
 
 			// TODO: scroll
-			// TODO: touch
-			// document.addEventListener('touchstart', this.ontouchstart);
-			// document.addEventListener('touchmove', this.ontouchmove);
-			// document.addEventListener('touchend', this.ontouchend);
+			document.addEventListener('touchstart', this.on_touch_down.bind(this), false);
+			document.addEventListener('touchmove', this.on_touch_move.bind(this), false);
+			document.addEventListener('touchend', this.on_touch_up.bind(this), false);
 		});
 
 		this.canvas = canvas;
@@ -80,19 +78,19 @@ engine_internal.input_module = {
 	},
 
 
-	register_editor_view: function(el, id) {
-		el.tabIndex = 1; // make sure elements can recieve focus
+	// register_editor_view: function(el, id) {
+	// 	el.tabIndex = 1; // make sure elements can recieve focus
 
-		el.addEventListener('keydown', this.on_key_down.bind(this), true);
-		el.addEventListener('keyup', this.on_key_up.bind(this), true);
+	// 	el.addEventListener('keydown', this.on_key_down.bind(this), true);
+	// 	el.addEventListener('keyup', this.on_key_up.bind(this), true);
 
-		el.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
-		el.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
-		el.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
+	// 	el.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
+	// 	el.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
+	// 	el.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
 
-		el.addEventListener('focus', this.on_focus_gain.bind(this), true);
-		el.addEventListener('blur', this.on_focus_loss.bind(this), true);
-	},
+	// 	el.addEventListener('focus', this.on_focus_gain.bind(this), true);
+	// 	el.addEventListener('blur', this.on_focus_loss.bind(this), true);
+	// },
 
 
 	on_focus_loss: function(e) {
@@ -150,6 +148,51 @@ engine_internal.input_module = {
 		let dx = e.movementX;
 		let dy = e.movementY;
 		let consume = engine_internal.exports.internal_handle_mouse_move(x, y, dx, dy);
+		if (consume) {
+			e.preventDefault();
+		}
+	},
+
+
+	on_touch_down: function(e) {
+		let consume = false;
+
+		for (let touch of e.changedTouches) {
+			let x = touch.clientX;
+			let y = touch.clientY;
+			consume |= engine_internal.exports.internal_handle_touch_down(touch.identifier, x, y);
+		}
+
+		if (consume) {
+			e.preventDefault();
+		}
+	},
+
+
+	on_touch_up: function(e) {
+		let consume = false;
+
+		for (let touch of e.changedTouches) {
+			let x = touch.clientX;
+			let y = touch.clientY;
+			consume |= engine_internal.exports.internal_handle_touch_up(touch.identifier, x, y);
+		}
+
+		if (consume) {
+			e.preventDefault();
+		}
+	},
+
+
+	on_touch_move: function(e) {
+		let consume = false;
+
+		for (let touch of e.changedTouches) {
+			let x = touch.clientX;
+			let y = touch.clientY;
+			consume |= engine_internal.exports.internal_handle_touch_move(touch.identifier, x, y);
+		}
+
 		if (consume) {
 			e.preventDefault();
 		}
