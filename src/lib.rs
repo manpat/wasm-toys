@@ -2,8 +2,7 @@
 #![feature(clamp)]
 #![feature(nll)]
 
-// extern crate common;
-// extern crate failure;
+pub extern crate common;
 
 pub mod imports;
 

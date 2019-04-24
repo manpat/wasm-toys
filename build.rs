@@ -49,7 +49,6 @@ r##"<!doctype html>
 		<script src="/wasm-toys/support.js"></script>
 		<script src="/wasm-toys/input.js"></script>
 		<script src="/wasm-toys/gl.js"></script>
-		<script src="/wasm-toys/assets.js"></script>
 		<script>
 			"use strict";
 
@@ -75,7 +74,6 @@ r##"
 /wasm-toys/support.js => bindings/support.js
 /wasm-toys/input.js => bindings/input.js
 /wasm-toys/gl.js => bindings/gl.js
-/wasm-toys/assets.js => bindings/assets.js
 "##;
 
 const MAPPING_TEMPLATE: &'static str = 
