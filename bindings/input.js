@@ -32,24 +32,6 @@ const Intent = create_enum([
 
 engine_internal.input_module = {
 	init: function (canvas) {
-		// No context menus pls
-		document.addEventListener('contextmenu', (e) => e.preventDefault(), true);
-
-		// Defer binding so engine has a chance to init
-		window.requestAnimationFrame(() => {
-			document.addEventListener('keydown', this.on_key_down.bind(this), true);
-			document.addEventListener('keyup', this.on_key_up.bind(this), true);
-
-			document.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
-			document.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
-			document.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
-
-			// TODO: scroll
-			document.addEventListener('touchstart', this.on_touch_down.bind(this), false);
-			document.addEventListener('touchmove', this.on_touch_move.bind(this), false);
-			document.addEventListener('touchend', this.on_touch_up.bind(this), false);
-		});
-
 		this.canvas = canvas;
 
 		this.has_pointer_lock = 'pointerLockElement' in document ||
@@ -78,19 +60,26 @@ engine_internal.input_module = {
 	},
 
 
-	// register_editor_view: function(el, id) {
-	// 	el.tabIndex = 1; // make sure elements can recieve focus
+	init_input_listeners: function(passive) {
+		let target = passive? this.canvas : document;
 
-	// 	el.addEventListener('keydown', this.on_key_down.bind(this), true);
-	// 	el.addEventListener('keyup', this.on_key_up.bind(this), true);
+		if (!passive) {
+			// Disable context menus if not in passive mode
+			target.addEventListener('contextmenu', (e) => e.preventDefault(), true);
+		}
 
-	// 	el.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
-	// 	el.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
-	// 	el.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
+		target.addEventListener('keydown', this.on_key_down.bind(this), true);
+		target.addEventListener('keyup', this.on_key_up.bind(this), true);
 
-	// 	el.addEventListener('focus', this.on_focus_gain.bind(this), true);
-	// 	el.addEventListener('blur', this.on_focus_loss.bind(this), true);
-	// },
+		target.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
+		target.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
+		target.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
+
+		// TODO: scroll
+		target.addEventListener('touchstart', this.on_touch_down.bind(this), false);
+		target.addEventListener('touchmove', this.on_touch_move.bind(this), false);
+		target.addEventListener('touchend', this.on_touch_up.bind(this), false);
+	},
 
 
 	on_focus_loss: function(e) {
@@ -216,6 +205,8 @@ engine_internal.input_module = {
 
 	imports: function() {
 		return {
+			init_input_listeners: (passive) => this.init_input_listeners(passive),
+
 			request_pointer_lock: () => this.request_pointer_lock(),
 			exit_pointer_lock: () => this.exit_pointer_lock(),
 		};
