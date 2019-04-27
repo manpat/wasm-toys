@@ -70,8 +70,7 @@ async function initialise_engine(engine_module, canvas, user_imports) {
 		engine_internal.text_decoder = { decode: engine_internal.poormans_text_decode };
 	}
 
-	// TODO: make editor module optional?
-	let modules = ["gl", "input", "asset"];
+	let modules = ["gl", "input"];
 
 	for (let m of modules) {
 		let name = m + "_module";
@@ -83,7 +82,6 @@ async function initialise_engine(engine_module, canvas, user_imports) {
 	engine_internal.canvas = canvas;
 	engine_internal.gl_module.init(canvas);
 	engine_internal.input_module.init(canvas);
-	engine_internal.asset_module.init(engine_internal.gl_module);
 
 	let wasm_params = {
 		// one page = 64kiB
@@ -165,7 +163,6 @@ engine_internal.initialise_imports = function(user_imports) {
 
 		this.gl_module.imports(),
 		this.input_module.imports(),
-		this.asset_module.imports(),
 	);
 };
 
@@ -178,7 +175,6 @@ engine_internal.initialise_exports = function(engine) {
 
 		this.input_module.exports(exps),
 		this.gl_module.exports(exps),
-		this.asset_module.exports(exps),
 	);
 };
 

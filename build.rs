@@ -3,79 +3,13 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-const INDEX_HTML_TEMPLATE: &'static str = 
-r##"<!doctype html>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-		<meta name="apple-mobile-web-app-capable" content="yes" />
-		<meta name="mobile-web-app-capable" content="yes" />
-
-		<meta name="theme-color" content="#222" />
-		<meta name="msapplication-navbutton-color" content="#222" />
-		<meta name="apple-mobile-web-app-status-bar-style" content="#222" />
-
-		<style>
-			* {
-				margin: 0;
-				padding: 0;
-				user-select: none;
-				-moz-user-select: none;
-				-khtml-user-select: none;
-				-webkit-user-select: none;
-				-o-user-select: none;
-			}
-
-			html, body {
-				width: 100vw;
-				height: 100vh;
-				position: fixed;
-				overflow: hidden;
-			}
-
-			canvas {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-
-				overflow: hidden;
-				display: block;
-			}
-		</style>
-
-		<script src="/wasm-toys/support.js"></script>
-		<script src="/wasm-toys/input.js"></script>
-		<script src="/wasm-toys/gl.js"></script>
-		<script src="/wasm-toys/assets.js"></script>
-		<script>
-			"use strict";
-
-			let engine = null;
-
-			window.addEventListener("load", async function() {
-				let engine_promise = compile_engine("/wasm-toys/[[binary_name]]-[[build_type]].wasm");
-				let canvas = document.getElementById("canvas");
-
-				engine = await initialise_engine(await engine_promise, canvas, {});
-			});
-		</script>
-	</head>
-
-	<body>
-		<canvas id="canvas"></canvas>
-	</body>
-</html>"##;
-
+const INDEX_HTML_TEMPLATE: &'static str = include_str!("assets/template.html");
 
 const MAPPING_HEADER: &'static str = 
 r##"
 /wasm-toys/support.js => bindings/support.js
 /wasm-toys/input.js => bindings/input.js
 /wasm-toys/gl.js => bindings/gl.js
-/wasm-toys/assets.js => bindings/assets.js
 "##;
 
 const MAPPING_TEMPLATE: &'static str = 
