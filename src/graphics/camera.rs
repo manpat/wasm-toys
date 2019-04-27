@@ -5,7 +5,7 @@ use std::cell::Cell;
 #[derive(Copy, Clone, Debug)]
 pub enum Projection {
 	Perspective { fovy: f32 },
-	Orthographic
+	Orthographic { scale: f32 },
 }
 
 
@@ -91,7 +91,7 @@ impl Camera {
 
 			match self.projection {
 				Perspective{fovy} => Mat4::perspective(fovy, self.aspect, self.near, self.far),
-				Orthographic => unimplemented!()
+				Orthographic{scale} => Mat4::ortho_aspect(scale, self.aspect, self.near, self.far)
 			}
 		})
 	}

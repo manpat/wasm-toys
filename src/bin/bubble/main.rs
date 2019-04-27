@@ -10,7 +10,7 @@ use engine::graphics::vertex::ColorVertex as Vertex;
 mod scene;
 
 fn main() {
-	engine::init_engine(box Bubble::new());
+	engine::init_engine(Bubble::new());
 }
 
 
@@ -53,6 +53,8 @@ impl Bubble {
 }
 
 impl engine::EngineClient for Bubble {
+	fn uses_passive_input(&self) -> bool { false }
+
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		use engine::input;
 

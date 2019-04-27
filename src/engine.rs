@@ -6,7 +6,7 @@ pub type Ticks = u32;
 pub type EngineResult<T> = Result<T, failure::Error>;
 
 pub struct Engine {
-	pub client: Box<EngineClient>,
+	pub client: Box<dyn EngineClient>,
 
 	pub input: InputContext,
 
@@ -15,7 +15,7 @@ pub struct Engine {
 }
 
 impl Engine {
-	pub fn new(client: Box<EngineClient>) -> Self {
+	pub fn new<C: EngineClient + 'static>(client: C) -> Self {
 		unsafe {
 			gl::enable_attribute(0);
 			gl::enable_attribute(1);
@@ -23,9 +23,11 @@ impl Engine {
 			gl::enable(gl::Capability::DepthTest);
 			gl::enable(gl::Capability::Blend);
 
+			let input = InputContext::new(client.uses_passive_input());
+
 			Engine {
-				client,
-				input: InputContext::new(),
+				client: box client,
+				input,
 
 				viewport: Vec2i::new(0, 0),
 				time_ticks: 0,
@@ -59,6 +61,8 @@ pub struct UpdateContext<'eng> {
 }
 
 pub trait EngineClient {
+	fn uses_passive_input(&self) -> bool { true }
+
 	fn init(&mut self) {}
 	fn update(&mut self, _: UpdateContext) {}
 }

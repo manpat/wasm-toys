@@ -85,7 +85,11 @@ pub struct InputContext {
 
 
 impl InputContext {
-	pub fn new() -> InputContext {
+	pub fn new(uses_passive_input: bool) -> InputContext {
+		unsafe {
+			input::init_input_listeners(uses_passive_input);
+		}
+
 		InputContext {
 			key_states: [ButtonState::Up; KeyCode::Count as usize],
 			mb_states: [ButtonState::Up; MouseButton::Count as usize],
