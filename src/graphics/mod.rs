@@ -10,13 +10,33 @@ pub mod camera;
 // pub use self::texture_registry::{TextureID, TextureRegistry};
 // pub use self::sprite_registry::{SpriteID, SpriteRegistry};
 // pub use self::sprite_renderer::SpriteRenderer;
-pub use self::mesh::DynamicMesh;
+pub use self::mesh::{BasicDynamicMesh, DynamicMesh};
 pub use self::camera::Camera;
 
 pub use crate::imports::gl;
 
 pub fn create_shader(vsrc: &str, fsrc: &str, attribs: &[&str]) -> gl::ProgramID {
 	unsafe {
+		let program = gl::create_shader_program();
+
+		let vsh = gl::create_shader(gl::ShaderType::Vertex, vsrc.into());
+		let fsh = gl::create_shader(gl::ShaderType::Fragment, fsrc.into());
+
+		for (i, &a) in attribs.iter().enumerate() {
+			gl::bind_attrib_location(program, a.into(), i as u32);
+		}
+
+		gl::link_program(program, vsh, fsh);
+
+		program
+	}	
+}
+
+pub fn create_shader_combined(src: &str, attribs: &[&str]) -> gl::ProgramID {
+	unsafe {
+		let mut src = src.split("/* @@@ */");
+		let (vsrc, fsrc) = (src.next().unwrap(), src.next().unwrap());
+
 		let program = gl::create_shader_program();
 
 		let vsh = gl::create_shader(gl::ShaderType::Vertex, vsrc.into());

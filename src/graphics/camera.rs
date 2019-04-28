@@ -73,6 +73,7 @@ impl Camera {
 	pub fn position(&self) -> Vec3 { self.position }
 	pub fn orientation(&self) -> Quat { self.orientation }
 	pub fn viewport(&self) -> Vec2i { self.viewport }
+	pub fn aspect(&self) -> f32 { self.aspect }
 
 	pub fn update(&mut self, viewport: Vec2i) {
 		self.viewport = viewport;

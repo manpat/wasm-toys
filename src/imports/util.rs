@@ -6,4 +6,6 @@ extern {
 
 	pub fn canvas_width() -> i32;
 	pub fn canvas_height() -> i32;
+
+	pub fn math_random() -> f32;
 }

@@ -90,6 +90,8 @@ engine_internal.gl_module = {
 
 			enable: (e) => gl.enable(e),
 			disable: (e) => gl.disable(e),
+
+			blend_func: (s, d) => gl.blendFunc(s, d),
 			
 			// Draw stuff
 			draw_arrays: (draw_mode, start, count) => gl.drawArrays(draw_mode, start, count),
@@ -211,6 +213,14 @@ engine_internal.gl_module = {
 
 				let loc = gl.getUniformLocation(program, u_name);
 				gl.uniform1i(loc, i);
+			},
+
+			set_uniform_f32_raw: (program_id, name_ptr, name_len, f) => {
+				let program = this.programs[program_id];
+				let u_name = rust_str_to_js(name_ptr, name_len);
+
+				let loc = gl.getUniformLocation(program, u_name);
+				gl.uniform1f(loc, f);
 			},
 
 			set_uniform_vec4_raw: (program_id, name_ptr, name_len, x,y,z,w) => {

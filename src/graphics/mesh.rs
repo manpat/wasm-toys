@@ -10,6 +10,12 @@ pub struct DynamicMesh<T: Vertex> {
 	ebo: gl::BufferID,
 }
 
+pub struct BasicDynamicMesh<T: Vertex> {
+	vertices: Vec<T>,
+	descriptor: Descriptor,
+	vbo: gl::BufferID,
+}
+
 
 impl<T: Vertex> DynamicMesh<T> {
 	pub fn new() -> Self {
@@ -79,5 +85,58 @@ impl<T: Vertex> DynamicMesh<T> {
 		}
 
 		Some(start as u16)
+	}
+}
+
+
+impl<T: Vertex + Copy> BasicDynamicMesh<T> {
+	pub fn new() -> Self {
+		unsafe {
+			BasicDynamicMesh {
+				vertices: Vec::new(),
+				descriptor: T::descriptor(),
+				vbo: gl::create_buffer(),
+			}
+		}
+	}
+
+	pub fn draw(&self, dm: gl::DrawMode) {
+		use std::mem::size_of;
+
+		unsafe {
+			if self.vertices.len() > 0 {
+				gl::bind_buffer(gl::BufferTarget::ArrayBuffer, self.vbo);
+				gl::upload_buffer_data(gl::BufferTarget::ArrayBuffer,
+					self.vertices.as_ptr() as *const u8,
+					self.vertices.len() * size_of::<T>());
+
+				self.descriptor.bind();
+
+				gl::draw_arrays(dm, 0, self.vertices.len());
+			}
+		}
+	}
+
+	pub fn clear(&mut self) {
+		self.vertices.clear();
+	}
+
+	pub fn add_vertex(&mut self, vert: T) {
+		self.vertices.push(vert);
+	}
+
+	pub fn add_vertices(&mut self, verts: &[T]) {
+		self.vertices.extend_from_slice(verts);
+	}
+
+	pub fn add_quad(&mut self, verts: &[T]) {
+		assert!(verts.len() >= 4);
+
+		let es = [
+			verts[0], verts[1], verts[2],
+			verts[0], verts[2], verts[3]
+		];
+
+		self.vertices.extend_from_slice(&es);
 	}
 }

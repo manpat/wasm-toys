@@ -22,6 +22,7 @@ impl Engine {
 
 			gl::enable(gl::Capability::DepthTest);
 			gl::enable(gl::Capability::Blend);
+			gl::blend_func(gl::BlendFactor::One, gl::BlendFactor::OneMinusSrcAlpha);
 
 			let input = InputContext::new(client.uses_passive_input());
 

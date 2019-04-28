@@ -92,6 +92,27 @@ pub enum StencilOp {
 	Invert = 5386,
 }
 
+#[repr(u32)]
+pub enum BlendFactor {
+	Zero = 0,
+	One = 1,
+
+	SrcColor = 768,
+	OneMinusSrcColor = 769,
+	DstColor = 774,
+	OneMinusDstColor = 775,
+
+	SrcAlpha = 770,
+	OneMinusSrcAlpha = 771,
+	DstAlpha = 772,
+	OneMinusDstAlpha = 773,
+
+	ConstantColor = 32769,
+	OneMinusConstantColor = 32770,
+	ConstantAlpha = 32771,
+	OneMinusConstantAlpha = 32772,
+}
+
 pub const COLOR_BUFFER_BIT: u32 = 1<<14;
 pub const DEPTH_BUFFER_BIT: u32 = 1<<8;
 pub const STENCIL_BUFFER_BIT: u32 = 1<<10;
@@ -125,9 +146,11 @@ extern {
 	pub fn enable(_: Capability);
 	pub fn disable(_: Capability);
 
+	pub fn blend_func(src: BlendFactor, dst: BlendFactor);
+
 	pub fn draw_arrays(_: DrawMode, start: usize, vert_count: usize);
 	pub fn draw_elements(_: DrawMode, el_count: usize, el_type: Type, el_offset: usize /*bytes*/);
-	
+
 	pub fn create_buffer() -> BufferID;
 	pub fn bind_buffer(_: BufferTarget, _: BufferID);
 	pub fn upload_buffer_data(_: BufferTarget, _: *const u8, _: usize);
@@ -154,6 +177,7 @@ extern {
 	pub fn stencil_mask(bits: u8);
 
 	fn set_uniform_int_raw(_: ProgramID, _: RawStr, _: u32);
+	fn set_uniform_f32_raw(_: ProgramID, _: RawStr, _: f32);
 	fn set_uniform_vec4_raw(_: ProgramID, _: RawStr, _: f32, _: f32, _: f32, _: f32);
 	fn set_uniform_mat4_raw(_: ProgramID, _: RawStr, _: *const Mat4);
 }
@@ -161,6 +185,12 @@ extern {
 pub fn set_uniform_int(program: ProgramID, name: &str, i: u32) {
 	unsafe {
 		set_uniform_int_raw(program, name.into(), i);
+	}
+}
+
+pub fn set_uniform_f32(program: ProgramID, name: &str, f: f32) {
+	unsafe {
+		set_uniform_f32_raw(program, name.into(), f);
 	}
 }
 
