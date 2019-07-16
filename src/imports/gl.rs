@@ -2,18 +2,21 @@ use crate::imports::RawStr;
 use common::math::{Mat4, Vec4};
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum ShaderType {
 	Vertex,
 	Fragment
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum BufferTarget {
 	ArrayBuffer = 34962,
 	ElementArrayBuffer = 34963,
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum Type {
 	Byte = 5120,
 	Short = 5122,
@@ -23,12 +26,16 @@ pub enum Type {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum Format {
+	Luminance = 6409,
+	LuminanceAlpha = 6410,
 	RGB = 6407,
 	RGBA = 6408,
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum TextureParam {
 	MagFilter = 10240,
 	MinFilter = 10241,
@@ -37,6 +44,7 @@ pub enum TextureParam {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum TextureParamValue {
 	Nearest = 9728,
 	Linear = 9729,
@@ -51,6 +59,7 @@ pub enum TextureParamValue {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum DrawMode {
 	Points = 0,
 	Lines = 1,
@@ -62,6 +71,7 @@ pub enum DrawMode {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum Capability {
 	Blend = 3042,
 	CullFace = 2884,
@@ -75,6 +85,7 @@ pub enum Capability {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum StencilCondition {
 	Never = 512,
 	Always = 519,
@@ -84,6 +95,7 @@ pub enum StencilCondition {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum StencilOp {
 	Keep = 7680,
 	Replace = 7681,
@@ -93,6 +105,7 @@ pub enum StencilOp {
 }
 
 #[repr(u32)]
+#[derive(Copy, Clone, Debug)]
 pub enum BlendFactor {
 	Zero = 0,
 	One = 1,
@@ -160,7 +173,8 @@ extern {
 
 	pub fn create_texture() -> TextureID;
 	pub fn bind_texture(_: TextureID);
-	pub fn upload_image_data(w: u32, h: u32, _: Format, _: Type);
+	pub fn active_texture(_: i32);
+	pub fn upload_image_data(w: u32, h: u32, _: Format, _: Type, _: *const u8, _: usize);
 	pub fn tex_parameter(_: TextureParam, _: TextureParamValue);
 
 	pub fn create_shader_program() -> ProgramID;

@@ -5,8 +5,39 @@ use common::*;
 pub type Mesh = DynamicMesh<Vertex>;
 
 pub fn init() -> (Mesh, Mesh) {
-	let scene = parse_ply(include_str!("scene.ply"));
+	let mut scene = parse_ply(include_str!("scene.ply"));
 	let portal = parse_ply(include_str!("portal.ply"));
+
+	scene.apply(|vert| {
+		let rgb = vert.color;
+
+		let (max, min, sep, coeff) = {
+			let (max, min, sep, coeff) = if rgb.x > rgb.y {
+				(rgb.x, rgb.y, rgb.y - rgb.z, 0.0)
+			} else {
+				(rgb.y, rgb.x, rgb.z - rgb.x, 2.0)
+			};
+			
+			if rgb.z > max {
+				(rgb.z, min, rgb.x - rgb.y, 4.0)
+			} else {
+				let min_val = if rgb.z < min { rgb.z } else { min };
+				(max, min_val, sep, coeff)
+			}
+		};
+
+		let mut h = 0.0;
+		let mut s = 0.0;
+		let v = max;
+
+		if max != min {
+			let d = max - min;
+			s = d / max;
+			h = (( sep / d ) + coeff) * 60.0 / 360.0;
+		};
+
+		vert.color = Vec3::new(h, s, v);
+	});
 
 	(scene, portal)
 }

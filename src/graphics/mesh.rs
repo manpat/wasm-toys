@@ -53,6 +53,12 @@ impl<T: Vertex> DynamicMesh<T> {
 		}
 	}
 
+	pub fn apply<F>(&mut self, mut f: F) where F: FnMut(&mut T) {
+		for v in self.vertices.iter_mut() {
+			f(v);
+		}
+	}
+
 	pub fn clear(&mut self) {
 		self.vertices.clear();
 		self.indices.clear();

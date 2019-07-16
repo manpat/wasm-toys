@@ -1,6 +1,7 @@
 pub mod vertex;
 pub mod mesh;
 pub mod camera;
+pub mod texture;
 
 // pub mod sprite_renderer;
 
@@ -10,6 +11,7 @@ pub mod camera;
 // pub use self::texture_registry::{TextureID, TextureRegistry};
 // pub use self::sprite_registry::{SpriteID, SpriteRegistry};
 // pub use self::sprite_renderer::SpriteRenderer;
+pub use self::texture::{Texture, TextureBuilder};
 pub use self::mesh::{BasicDynamicMesh, DynamicMesh};
 pub use self::camera::Camera;
 

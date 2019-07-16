@@ -1,6 +1,6 @@
 #![feature(box_syntax)]
 
-#[macro_use] extern crate wasm_toys as engine;
+extern crate wasm_toys as engine;
 
 use common::*;
 use engine::DT;
@@ -56,8 +56,6 @@ impl engine::EngineClient for Bubble {
 	fn uses_passive_input(&self) -> bool { false }
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
-		use engine::input;
-
 		unsafe {
 			gl::enable(gl::Capability::StencilTest);
 			gl::stencil_mask(0xFF);

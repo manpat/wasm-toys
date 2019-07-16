@@ -18,7 +18,6 @@ impl Engine {
 	pub fn new<C: EngineClient + 'static>(client: C) -> Self {
 		unsafe {
 			gl::enable_attribute(0);
-			gl::enable_attribute(1);
 
 			gl::enable(gl::Capability::DepthTest);
 			gl::enable(gl::Capability::Blend);

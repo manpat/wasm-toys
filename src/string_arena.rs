@@ -1,3 +1,5 @@
+#![allow(unused_attributes)]
+
 use std::{fmt, ops, str, slice};
 use crate::*;
 
@@ -113,8 +115,7 @@ fn get_temp_string_arena() -> &'static mut StringArena {
 #[no_mangle]
 pub fn allocate_str_space(size: usize) -> *mut u8 {
 	let arena = get_temp_string_arena();
-	let mem = arena.allocate(size);
-	mem
+	arena.allocate(size)
 }
 
 #[no_mangle]

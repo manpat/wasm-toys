@@ -64,8 +64,8 @@ impl Descriptor {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct ColorVertex {
-	pos: Vec3,
-	color: Vec3,
+	pub pos: Vec3,
+	pub color: Vec3,
 }
 
 impl ColorVertex {
@@ -85,8 +85,8 @@ impl Vertex for ColorVertex {
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
 pub struct TexturedVertex {
-	pos: Vec3,
-	uv: Vec2,
+	pub pos: Vec3,
+	pub uv: Vec2,
 }
 
 impl TexturedVertex {

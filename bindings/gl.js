@@ -56,7 +56,7 @@ engine_internal.gl_module = {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
 		this.textures.push(tex);
-		return this.textures.length-1;
+		return this.textures.length;
 	},
 
 	load_named_texture: function(id, el) {
@@ -101,11 +101,11 @@ engine_internal.gl_module = {
 			// Buffer stuff
 			create_buffer: () => {
 				this.buffers.push(gl.createBuffer());
-				return this.buffers.length-1;
+				return this.buffers.length;
 			},
 
 			bind_buffer: (target, id) => {
-				let buf = this.buffers[id];
+				let buf = this.buffers[id-1] || null;
 				gl.bindBuffer(target, buf);
 			},
 
@@ -125,17 +125,20 @@ engine_internal.gl_module = {
 			// Texture stuff
 			create_texture: () => {
 				this.textures.push(gl.createTexture());
-				return this.textures.length-1;
+				return this.textures.length;
 			},
 
 			bind_texture: (id) => {
-				let texture = this.textures[id];
+				let texture = this.textures[id-1] || null;
 				gl.bindTexture(gl.TEXTURE_2D, texture);
 			},
 
-			upload_image_data: (w, h, format, type) => {
+			active_texture: (id) => gl.activeTexture(gl.TEXTURE0 + id),
+
+			upload_image_data: (w, h, format, type, ptr, len) => {
+				let buf = heap_memory_view(ptr, len);
 				gl.texImage2D(gl.TEXTURE_2D, 0, format, w, h, 0,
-					format, type, null);
+					format, type, buf);
 			},
 
 			tex_parameter: (param, value) => {
@@ -146,14 +149,14 @@ engine_internal.gl_module = {
 			// Framebuffer stuff
 			create_framebuffer: () => {
 				this.framebuffers.push(gl.createFramebuffer());
-				return this.framebuffers.length-1;
+				return this.framebuffers.length;
 			},
 
 
 			// Shader stuff
 			create_shader_program: () => {
 				this.programs.push(gl.createProgram());
-				return this.programs.length-1;
+				return this.programs.length;
 			},
 
 			create_shader: (type, src_ptr, src_len) => {
@@ -172,19 +175,19 @@ engine_internal.gl_module = {
 				}
 
 				this.shaders.push(sh);
-				return this.shaders.length-1;
+				return this.shaders.length;
 			},
 
 			bind_attrib_location: (program_id, name_ptr, name_len, idx) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				let name = rust_str_to_js(name_ptr, name_len);
 				gl.bindAttribLocation(program, idx, name);
 			},
 
 			link_program: (program_id, vert_id, frag_id) => {
-				let program = this.programs[program_id];
-				let vert = this.shaders[vert_id];
-				let frag = this.shaders[frag_id];
+				let program = this.programs[program_id-1] || null;
+				let vert = this.shaders[vert_id-1] || null;
+				let frag = this.shaders[frag_id-1] || null;
 
 				gl.attachShader(program, vert);
 				gl.attachShader(program, frag);
@@ -197,7 +200,7 @@ engine_internal.gl_module = {
 			},
 
 			use_program: (program_id) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				gl.useProgram(program);
 			},
 
@@ -208,7 +211,7 @@ engine_internal.gl_module = {
 			stencil_mask: (bits) => gl.stencilMask(bits),
 
 			set_uniform_int_raw: (program_id, name_ptr, name_len, i) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				let u_name = rust_str_to_js(name_ptr, name_len);
 
 				let loc = gl.getUniformLocation(program, u_name);
@@ -216,7 +219,7 @@ engine_internal.gl_module = {
 			},
 
 			set_uniform_f32_raw: (program_id, name_ptr, name_len, f) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				let u_name = rust_str_to_js(name_ptr, name_len);
 
 				let loc = gl.getUniformLocation(program, u_name);
@@ -224,7 +227,7 @@ engine_internal.gl_module = {
 			},
 
 			set_uniform_vec4_raw: (program_id, name_ptr, name_len, x,y,z,w) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				let u_name = rust_str_to_js(name_ptr, name_len);
 
 				let loc = gl.getUniformLocation(program, u_name);
@@ -232,7 +235,7 @@ engine_internal.gl_module = {
 			},
 
 			set_uniform_mat4_raw: (program_id, name_ptr, name_len, mat) => {
-				let program = this.programs[program_id];
+				let program = this.programs[program_id-1] || null;
 				let buf_raw = engine_internal.memory.buffer;
 
 				let mat_view = new Float32Array(buf_raw, mat, 16);

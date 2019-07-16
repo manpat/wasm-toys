@@ -1,3 +1,5 @@
+#![allow(unused_attributes)]
+
 use common::*;
 
 use crate::get_engine_mut;
