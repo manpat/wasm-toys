@@ -231,7 +231,7 @@ impl engine::EngineClient for SnowApp {
 
 	fn init(&mut self) {
 		// Prebake some particles
-		for _ in 0..6000 {
+		for _ in 0..600 {
 			self.update_particles();
 		}
 	}
