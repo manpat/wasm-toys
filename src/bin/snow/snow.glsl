@@ -30,7 +30,7 @@ void main() {
 
 /* @@@ */
 
-precision highp float;
+precision lowp float;
 
 varying vec3 v_position;
 varying float v_sprite_stage;
@@ -42,16 +42,16 @@ float sample_distance() {
 float sample_snowflake(vec2 uv) {
 	vec2 cell = floor(uv * 3.0);
 
-	float stage = floor(v_sprite_stage);
+	int stage = int(v_sprite_stage);
 
 	// Spawn
-	if (stage == 0.0) {
+	if (stage == 0) {
 		return float(cell == vec2(1.0, 1.0));
 	}
 
 	// Falling
-	if (stage < 10.0) {
-		return mod(cell.x + cell.y + stage - 1.0, 2.0);
+	if (stage < 10) {
+		return mod(cell.x + cell.y + float(v_sprite_stage) - 1.0, 2.0);
 	}
 
 	// Resting
@@ -60,7 +60,6 @@ float sample_snowflake(vec2 uv) {
 
 void main() {
 	float margin = 0.04;
-	// vec2 uv = gl_PointCoord * (1.0 - margin*2.0) + margin;
 	vec2 uv = mix(vec2(margin), vec2(1.0 - margin), gl_PointCoord);
 
 	float alpha = (1.0 - sample_distance()/1.5)
