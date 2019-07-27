@@ -175,7 +175,7 @@ impl SnowApp {
 			gl::use_program(self.snow_program);
 		}
 
-		let particle_scale = ctx.viewport.y as f32 * PARTICLE_EXTENT;
+		let particle_scale = ctx.viewport.y.min(ctx.viewport.x) as f32 * PARTICLE_EXTENT;
 		gl::set_uniform_f32(self.snow_program, "u_particle_scale", particle_scale);
 		gl::set_uniform_mat4(self.snow_program, "u_proj_view", &self.camera.projection_view());
 
