@@ -2,7 +2,9 @@ pub mod vertex;
 pub mod mesh;
 pub mod camera;
 pub mod texture;
+pub mod shader;
 
+pub use self::shader::Shader;
 pub use self::texture::{Texture, TextureBuilder};
 pub use self::mesh::{BasicDynamicMesh, DynamicMesh};
 pub use self::camera::Camera;

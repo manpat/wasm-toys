@@ -190,10 +190,10 @@ extern {
 	pub fn depth_mask(enabled: bool);
 	pub fn stencil_mask(bits: u8);
 
-	fn set_uniform_int_raw(_: ProgramID, _: RawStr, _: u32);
-	fn set_uniform_f32_raw(_: ProgramID, _: RawStr, _: f32);
-	fn set_uniform_vec4_raw(_: ProgramID, _: RawStr, _: f32, _: f32, _: f32, _: f32);
-	fn set_uniform_mat4_raw(_: ProgramID, _: RawStr, _: *const Mat4);
+	pub fn set_uniform_int_raw(_: ProgramID, _: RawStr, _: u32);
+	pub fn set_uniform_f32_raw(_: ProgramID, _: RawStr, _: f32);
+	pub fn set_uniform_vec4_raw(_: ProgramID, _: RawStr, _: f32, _: f32, _: f32, _: f32);
+	pub fn set_uniform_mat4_raw(_: ProgramID, _: RawStr, _: *const Mat4);
 }
 
 pub fn set_uniform_int(program: ProgramID, name: &str, i: u32) {

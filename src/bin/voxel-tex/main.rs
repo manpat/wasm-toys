@@ -13,7 +13,7 @@ fn main() {
 
 struct VoxelApp {
 	camera: Camera,
-	program: gl::ProgramID,
+	program: Shader,
 
 	voxel_chunk_mesh: DynamicMesh<Vertex>,
 	voxel_chunk_tex: Texture,
@@ -24,7 +24,7 @@ struct VoxelApp {
 
 impl VoxelApp {
 	fn new() -> VoxelApp {
-		let program = create_shader_combined(
+		let program = Shader::from_combined(
 			include_str!("color.glsl"),
 			&["position", "normal", "voxel_pos"]
 		);
@@ -83,14 +83,11 @@ impl engine::EngineClient for VoxelApp {
 
 			gl::enable(gl::Capability::CullFace);
 
-			gl::enable_attribute(1);
-			gl::enable_attribute(2);
-
 			gl::clear_color(r, g, b, 1.0);
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-			gl::use_program(self.program);
 		}
 
+		self.program.bind();
 
 		// spin
 		if ctx.input.primary_down() {
@@ -122,14 +119,14 @@ impl engine::EngineClient for VoxelApp {
 
 		let chunk_size = 8.0;
 
-		gl::set_uniform_int(self.program, "u_voxel_data", 0);
-		gl::set_uniform_f32(self.program, "u_voxel_chunk_size", chunk_size);
+		self.program.set_uniform("u_voxel_data", 0);
+		self.program.set_uniform("u_voxel_chunk_size", chunk_size);
 
 		for z in 0..8 {
 			for x in 0..8 {
 				let transform = proj_view * Mat4::translate(Vec3::new(x as f32 * chunk_size, 0.0, z as f32 * chunk_size));
 
-				gl::set_uniform_mat4(self.program, "u_proj_view", &transform);
+				self.program.set_uniform("u_proj_view", transform);
 				self.voxel_chunk_mesh.draw(gl::DrawMode::Triangles);
 			}
 		}

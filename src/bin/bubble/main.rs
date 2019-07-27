@@ -19,7 +19,7 @@ struct Bubble {
 	scene: DynamicMesh<Vertex>,
 	portal: DynamicMesh<Vertex>,
 
-	program: gl::ProgramID,
+	shader: Shader,
 
 	yaw_vel: f32,
 	yaw: f32,
@@ -29,7 +29,7 @@ impl Bubble {
 	fn new() -> Bubble {
 		let (scene, portal) = scene::init();
 
-		let program = create_shader_combined(
+		let shader = Shader::from_combined(
 			include_str!("clipped_color.glsl"),
 			&["position", "color"]
 		);
@@ -40,7 +40,7 @@ impl Bubble {
 		Bubble {
 			camera,
 			scene, portal,
-			program,
+			shader,
 
 			yaw_vel: 0.0,
 			yaw: 0.0,
@@ -60,9 +60,9 @@ impl engine::EngineClient for Bubble {
 
 			gl::clear_color(r, g, b, 1.0);
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT | gl::STENCIL_BUFFER_BIT);
-			gl::use_program(self.program);
 		}
 
+		self.shader.bind();
 
 		// spin
 		if ctx.input.primary_down() {
@@ -86,8 +86,8 @@ impl engine::EngineClient for Bubble {
 		self.camera.set_position(position);
 
 		// draw portal mask
-		gl::set_uniform_mat4(self.program, "proj_view", &self.camera.projection_view());
-		gl::set_uniform_vec4(self.program, "clip_plane", Vec4::new(0.0, 0.0, 0.0,-1.0));
+		self.shader.set_uniform("proj_view", self.camera.projection_view());
+		self.shader.set_uniform("clip_plane", Vec4::new(0.0, 0.0, 0.0,-1.0));
 
 		set_color_write(false);
 		set_depth_write(false);
@@ -97,8 +97,7 @@ impl engine::EngineClient for Bubble {
 		self.portal.draw(gl::DrawMode::Triangles);
 
 		// draw scene - clipped
-		gl::set_uniform_vec4(self.program, "clip_plane", quat.forward().extend(0.0));
-
+		self.shader.set_uniform("clip_plane", quat.forward().extend(0.0));
 
 		set_color_write(true);
 		set_depth_write(true);

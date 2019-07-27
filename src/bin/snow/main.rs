@@ -26,8 +26,8 @@ struct SnowApp {
 	wind_phase: f32,
 	wind_fm_phase: f32,
 
-	scene_program: gl::ProgramID,
-	snow_program: gl::ProgramID,
+	scene_shader: Shader,
+	snow_shader: Shader,
 
 	scene_mesh: BasicDynamicMesh<SceneVertex>,
 	snow_mesh: BasicDynamicMesh<ParticleVertex>,
@@ -38,19 +38,15 @@ impl SnowApp {
 		let mut camera = Camera::new();
 		camera.set_near_far(0.1, 100.0);
 
-		let scene_program = create_shader_combined(
+		let scene_shader = Shader::from_combined(
 			include_str!("scene.glsl"),
 			&["position"]
 		);
 
-		let snow_program = create_shader_combined(
+		let snow_shader = Shader::from_combined(
 			include_str!("snow.glsl"),
 			&["position", "sprite_stage"]
 		);
-
-		unsafe {
-			gl::enable_attribute(1);
-		}
 
 		let snow_mesh = BasicDynamicMesh::new();
 		let mut scene_mesh = BasicDynamicMesh::new();
@@ -72,7 +68,7 @@ impl SnowApp {
 			wind_phase: 0.0,
 			wind_fm_phase: 0.0,
 
-			scene_program, snow_program,
+			scene_shader, snow_shader,
 			scene_mesh, snow_mesh,
 		}
 	}
@@ -150,9 +146,6 @@ impl SnowApp {
 
 			gl::clear_color(r, g, b, 1.0);
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
-
-			gl::disable_attribute(1);
-			gl::use_program(self.scene_program);
 		}
 
 		let time = ctx.ticks as f32 * engine::DT;
@@ -164,20 +157,18 @@ impl SnowApp {
 		self.camera.set_orientation(quat);
 		self.camera.set_position(position);
 
-		let ground_color = Color::hsv(105.0, 0.4, 0.8).into();
+		let ground_color = Color::hsv(105.0, 0.4, 0.8);
+		let particle_scale = ctx.viewport.y.min(ctx.viewport.x) as f32 * PARTICLE_EXTENT;
 
-		gl::set_uniform_vec4(self.scene_program, "u_color", ground_color);
-		gl::set_uniform_mat4(self.scene_program, "u_proj_view", &self.camera.projection_view());
+		self.scene_shader.bind();
+		self.scene_shader.set_uniform("u_color", ground_color);
+		self.scene_shader.set_uniform("u_proj_view", self.camera.projection_view());
+
 		self.scene_mesh.draw(gl::DrawMode::Triangles);
 
-		unsafe {
-			gl::enable_attribute(1);
-			gl::use_program(self.snow_program);
-		}
-
-		let particle_scale = ctx.viewport.y.min(ctx.viewport.x) as f32 * PARTICLE_EXTENT;
-		gl::set_uniform_f32(self.snow_program, "u_particle_scale", particle_scale);
-		gl::set_uniform_mat4(self.snow_program, "u_proj_view", &self.camera.projection_view());
+		self.snow_shader.bind();
+		self.snow_shader.set_uniform("u_particle_scale", particle_scale);
+		self.snow_shader.set_uniform("u_proj_view", self.camera.projection_view());
 
 		self.snow_mesh.clear();
 
