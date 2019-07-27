@@ -102,8 +102,8 @@ async function initialise_engine(engine_module, canvas, user_imports) {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
 		
-		let client_width = engine_internal.canvas.clientWidth;
-		let client_height = engine_internal.canvas.clientHeight;
+		let client_width = engine_internal.gl_module.context.drawingBufferWidth;
+		let client_height = engine_internal.gl_module.context.drawingBufferHeight;
 
 		engine_internal.exports.internal_update_viewport(client_width, client_height);
 		engine_internal.exports.internal_update(time);
