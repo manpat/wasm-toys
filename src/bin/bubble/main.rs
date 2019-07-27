@@ -29,12 +29,8 @@ impl Bubble {
 	fn new() -> Bubble {
 		let (scene, portal) = scene::init();
 
-		let mut shader = include_str!("clipped_color.glsl")
-			.split("/* @@@ */");
-
-		let program = create_shader(
-			shader.next().unwrap(),
-			shader.next().unwrap(),
+		let program = create_shader_combined(
+			include_str!("clipped_color.glsl"),
 			&["position", "color"]
 		);
 
