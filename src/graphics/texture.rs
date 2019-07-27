@@ -2,9 +2,10 @@ use crate::imports::gl;
 use common::math::*;
 
 pub struct Texture {
-	pub gl_handle: gl::TextureID,
-	pub format: gl::Format,
-	pub component_type: gl::Type,
+	gl_handle: gl::TextureID,
+	format: gl::Format,
+	component_type: gl::Type,
+	size: Vec2i,
 }
 
 impl Texture {
@@ -13,6 +14,7 @@ impl Texture {
 			Texture {
 				gl_handle: gl::create_texture(),
 				format, component_type,
+				size: Vec2i::zero()
 			}
 		}
 	}
@@ -26,6 +28,7 @@ impl Texture {
 
 	pub fn upload<T: Copy>(&mut self, size: Vec2i, data: &[T]) {
 		self.bind(0);
+		self.size = size;
 
 		unsafe {
 			gl::upload_image_data(size.x as _, size.y as _,
@@ -33,6 +36,10 @@ impl Texture {
 				data.as_ptr() as _, std::mem::size_of::<T>() * data.len());
 		}
 	}
+
+	pub fn format(&self) -> gl::Format { self.format }
+	pub fn component_type(&self) -> gl::Type { self.component_type }
+	pub fn size(&self) -> Vec2i { self.size }
 }
 
 
