@@ -176,10 +176,10 @@ impl SnowApp {
 			let sprite_stage = match p.state {
 				ParticleState::Falling => {
 					if p.lifetime < 0.0 {
-						0.0
+						-1.0
 					} else {
-						// cycle [1, 2]
-						1.0 + p.lifetime/2.0 % 2.0
+						// cycle [0, 2)
+						p.lifetime/2.0 % 2.0
 					}
 				}
 

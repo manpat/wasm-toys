@@ -30,7 +30,7 @@ void main() {
 
 /* @@@ */
 
-precision lowp float;
+precision highp float;
 
 varying vec3 v_position;
 varying float v_sprite_stage;
@@ -39,23 +39,25 @@ float sample_distance() {
 	return max(length(v_position.xz) - 0.5, 0.0);
 }
 
+float almost_eq(vec2 a, vec2 b) {
+	return float(length(a - b) < 0.1);
+}
+
 float sample_snowflake(vec2 uv) {
 	vec2 cell = floor(uv * 3.0);
 
-	int stage = int(v_sprite_stage);
-
 	// Spawn
-	if (stage == 0) {
-		return float(cell == vec2(1.0, 1.0));
+	if (v_sprite_stage < 0.0) {
+		return almost_eq(cell, vec2(1.0, 1.0));
 	}
 
 	// Falling
-	if (stage < 10) {
-		return mod(cell.x + cell.y + float(v_sprite_stage) - 1.0, 2.0);
+	if (v_sprite_stage < 3.0) {
+		return mod(cell.x + cell.y + v_sprite_stage - 1.0, 2.0);
 	}
 
 	// Resting
-	return float(cell == vec2(1.0, 2.0));
+	return almost_eq(cell, vec2(1.0, 2.0));
 }
 
 void main() {
