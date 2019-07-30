@@ -64,15 +64,12 @@ void main() {
 	float margin = 0.04;
 	vec2 uv = mix(vec2(margin), vec2(1.0 - margin), gl_PointCoord);
 
+	if (sample_snowflake(uv) < 0.5) {
+		discard;
+	}
+
 	float alpha = (1.0 - sample_distance()/1.5)
 		* (1.0 - clamp(v_position.y - 1.0, 0.0, 1.0));
 
-	alpha = clamp(alpha, 0.0, 1.0);
-
-	float sample = sample_snowflake(uv) * alpha;
-	if (sample == 0.0) {
-		discard;
-	} 
-
-	gl_FragColor = vec4(sample);
+	gl_FragColor = vec4(clamp(alpha, 0.0, 1.0));
 }
