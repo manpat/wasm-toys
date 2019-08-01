@@ -53,7 +53,7 @@ float sample_snowflake(vec2 uv) {
 
 	// Falling
 	if (v_sprite_stage < 3.0) {
-		return mod(cell.x + cell.y + v_sprite_stage - 1.0, 2.0);
+		return mod(cell.x + cell.y + v_sprite_stage + 1.0, 2.0);
 	}
 
 	// Resting
@@ -61,7 +61,7 @@ float sample_snowflake(vec2 uv) {
 }
 
 void main() {
-	float margin = 0.04;
+	float margin = 0.05;
 	vec2 uv = mix(vec2(margin), vec2(1.0 - margin), gl_PointCoord);
 
 	if (sample_snowflake(uv) < 0.5) {
