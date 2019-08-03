@@ -53,7 +53,7 @@ float sample_snowflake(vec2 uv) {
 
 	// Falling
 	if (v_sprite_stage < 3.0) {
-		return mod(cell.x + cell.y + v_sprite_stage + 1.0, 2.0);
+		return mod(cell.x + cell.y + v_sprite_stage + 3.0, 2.0);
 	}
 
 	// Resting
