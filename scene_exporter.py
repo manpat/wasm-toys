@@ -28,6 +28,9 @@ def swap_coords(co):
 		return [co.x, co.z, -co.y, co.w]
 
 
+def write_binary(out, s, *args):
+	out.write(struct.pack('='+s, *args))
+
 def write_binary_string(out, s):
 	assert len(s) < 256
 	out.write(struct.pack('=B', len(s)))
@@ -90,39 +93,59 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 
 		with open(fname, 'wb') as out:
 			out.write(b"TOY") # Magic
-			out.write(struct.pack('=B', 1)) # Version
+			write_binary(out, 'B', 1) # Version
 
-			out.write(struct.pack('=H', len(self.meshes)))
+			write_binary(out, 'H', len(self.meshes))
 			for m in self.meshes:
 				num_vertices = len(m['vertices'])
-				num_triangles = len(m['triangles']) / 3
+				num_triangles = len(m['triangles']) // 3
 
 				# WebGL 1 only supports 16b element arrays
 				assert num_vertices < 65536
+				assert len(m['triangles']) % 3 == 0
 
 				out.write(b"MESH")
-				out.write(struct.pack('=I', num_vertices))
+				write_binary(out, 'H', num_vertices)
 				for v in m['vertices']:
-					out.write(struct.pack('=fff', v))
+					write_binary(out, 'fff', *v)
 
 				if num_vertices < 256:
-					pack_str = '=B'
+					tri_packing = 'B'
 				else:
-					pack_str = '=H'
+					tri_packing = 'H'
 				
-				out.write(struct.pack('=I', num_triangles))
+				write_binary(out, 'H', num_triangles)
 				for t in m['triangles']:
-					out.write(struct.pack(pack_str, t))
+					write_binary(out, tri_packing, t)
 
-			out.write(struct.pack('=H', len(self.entities)))
+				write_binary(out, 'B', len(m['extra_data']))
+				for name, data in m['extra_data']:
+					out.write(b"MDTA")
+					write_binary_string(out, name)
+					write_binary(out, 'H', len(data))
+					for el in data:
+						write_binary(out, 'ffff', *el)
+
+
+			write_binary(out, 'H', len(self.entities))
 			for e in self.entities:
 				out.write(b"ENTY")
 				write_binary_string(out, e['name'])
 
-				out.write(struct.pack('=fff', *e['position']))
-				out.write(struct.pack('=ffff', *e['rotation']))
-				out.write(struct.pack('=fff', *e['scale']))
-				out.write(struct.pack('=H', e['mesh_id']))
+				write_binary(out, 'fff', *e['position'])
+				write_binary(out, 'ffff', *e['rotation'])
+				write_binary(out, 'fff', *e['scale'])
+				write_binary(out, 'H', e['mesh_id'])
+
+			write_binary(out, 'H', len(self.scenes))
+			for s in self.scenes:
+				out.write(b"SCNE")
+				write_binary_string(out, s['name'])
+
+				write_binary(out, 'H', len(s['entities']))
+				for e in s['entities']:
+					write_binary(out, 'H', e)
+
 
 		return {'FINISHED'}
 
@@ -132,7 +155,6 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 			self.scenes.append({
 				"name": scene.name,
 				"raw": scene,
-				"objects": scene.objects[:],
 				"entities": []
 			})
 
