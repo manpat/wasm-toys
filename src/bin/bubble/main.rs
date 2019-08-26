@@ -4,10 +4,14 @@ extern crate wasm_toys as engine;
 
 use common::*;
 use engine::DT;
+use engine::EngineResult;
+use engine::scene;
 use engine::graphics::*;
-use engine::graphics::vertex::ColorVertex as Vertex;
+use engine::console_error;
+use failure::{ensure, format_err};
 
-mod scene;
+pub type Mesh = DynamicMesh<vertex::ColorVertex>;
+
 
 fn main() {
 	engine::init_engine(Bubble::new());
@@ -16,8 +20,8 @@ fn main() {
 
 struct Bubble {
 	camera: Camera,
-	scene: DynamicMesh<Vertex>,
-	portal: DynamicMesh<Vertex>,
+	scene: Mesh,
+	portal: Mesh,
 
 	shader: Shader,
 
@@ -27,7 +31,14 @@ struct Bubble {
 
 impl Bubble {
 	fn new() -> Bubble {
-		let (scene, portal) = scene::init();
+		let (scene, portal) = match init_scene() {
+			Ok(scene) => scene,
+			Err(e) => {
+				console_error!("Error loading scene!");
+				console_error!("{:?}", e);
+				panic!();
+			}
+		};
 
 		let shader = Shader::from_combined(
 			include_str!("clipped_color.glsl"),
@@ -109,4 +120,95 @@ impl engine::EngineClient for Bubble {
 		// TODO bubble shine
 		// TODO floaties
 	}
+}
+
+
+
+pub fn init_scene() -> EngineResult<(Mesh, Mesh)> {
+	let scene = scene::load_toy_file(include_bytes!("bubble.toy"))?;
+
+	let mut scene_mesh = Mesh::new();
+	let mut portal_mesh = Mesh::new();
+
+	for e in scene.entities.iter() {
+		if e.name != "portal" {
+			bake_entity_to_mesh(&mut scene_mesh, &scene, &e.name)?;
+		}
+	}
+
+	bake_entity_to_mesh(&mut portal_mesh, &scene, "portal")?;
+
+	scene_mesh.apply(|vert| {
+		let rgb = vert.color;
+
+		let (max, min, sep, coeff) = {
+			let (max, min, sep, coeff) = if rgb.x > rgb.y {
+				(rgb.x, rgb.y, rgb.y - rgb.z, 0.0)
+			} else {
+				(rgb.y, rgb.x, rgb.z - rgb.x, 2.0)
+			};
+			
+			if rgb.z > max {
+				(rgb.z, min, rgb.x - rgb.y, 4.0)
+			} else {
+				let min_val = if rgb.z < min { rgb.z } else { min };
+				(max, min_val, sep, coeff)
+			}
+		};
+
+		let mut h = 0.0;
+		let mut s = 0.0;
+		let v = max;
+
+		if max != min {
+			let d = max - min;
+			s = d / max;
+			h = (( sep / d ) + coeff) * 60.0 / 360.0;
+		};
+
+		vert.color = Vec3::new(h, s, v);
+	});
+
+	Ok((scene_mesh, portal_mesh))
+}
+
+
+
+fn bake_entity_to_mesh(mesh: &mut Mesh, scene: &scene::ToyFile, name: &str) -> EngineResult<()> {
+	let entity = scene.entities.iter()
+		.find(|e| e.name == name)
+		.ok_or_else(|| format_err!("Couldn't find entity '{}' in scene", name))?;
+
+	let mesh_id = entity.mesh_id as usize;
+
+	ensure!(mesh_id != 0, "Entity '{}' has no mesh", name);
+	ensure!(mesh_id <= scene.meshes.len(), "Entity '{}' has invalid mesh", name);
+
+	let mesh_data = &scene.meshes[mesh_id-1];
+
+	ensure!(mesh_data.color_data.len() > 0, "Entity '{}'s mesh has no color data", name);
+
+	let transform = Mat4::translate(entity.position)
+		* entity.rotation.to_mat4()
+		* Mat4::scale(entity.scale);
+
+	let verts = mesh_data.positions.iter()
+		.zip(mesh_data.color_data[0].data.iter())
+		.map(|(&pos, col)| {
+			vertex::ColorVertex::new(transform * pos, col.to_vec3())
+		})
+		.collect::<Vec<_>>();
+
+	match mesh_data.indices {
+		scene::MeshIndices::U8(ref v) => {
+			let indices: Vec<_> = v.iter().map(|&i| i as u16).collect();
+			mesh.add_geometry(&verts, &indices);
+		},
+
+		scene::MeshIndices::U16(ref v) => {
+			mesh.add_geometry(&verts, v);
+		}
+	}
+
+	Ok(())
 }
