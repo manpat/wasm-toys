@@ -7,14 +7,13 @@ use engine::DT;
 use engine::EngineResult;
 use engine::scene;
 use engine::graphics::*;
-use engine::console_error;
 use failure::{ensure, format_err};
 
 pub type Mesh = DynamicMesh<vertex::ColorVertex>;
 
 
 fn main() {
-	engine::init_engine(Bubble::new());
+	engine::init_engine(Bubble::new);
 }
 
 
@@ -31,14 +30,7 @@ struct Bubble {
 
 impl Bubble {
 	fn new() -> Bubble {
-		let (scene, portal) = match init_scene() {
-			Ok(scene) => scene,
-			Err(e) => {
-				console_error!("Error loading scene!");
-				console_error!("{:?}", e);
-				panic!();
-			}
-		};
+		let (scene, portal) = init_scene().expect("Error loading scene!");
 
 		let shader = Shader::from_combined(
 			include_str!("clipped_color.glsl"),
@@ -124,19 +116,23 @@ impl engine::EngineClient for Bubble {
 
 
 
-pub fn init_scene() -> EngineResult<(Mesh, Mesh)> {
-	let scene = scene::load_toy_file(include_bytes!("bubble.toy"))?;
+fn init_scene() -> EngineResult<(Mesh, Mesh)> {
+	let file = scene::load_toy_file(include_bytes!("bubble.toy"))?;
 
 	let mut scene_mesh = Mesh::new();
 	let mut portal_mesh = Mesh::new();
 
-	for e in scene.entities.iter() {
-		if e.name != "portal" {
-			bake_entity_to_mesh(&mut scene_mesh, &scene, &e.name)?;
-		}
+	let scene = find_scene(&file, "seaside")?;
+
+	let entities = scene.entities.iter()
+		.map(|&id| &file.entities[id as usize - 1]);
+
+	for e in entities {
+		bake_entity_to_mesh(&mut scene_mesh, &file, e)?;
 	}
 
-	bake_entity_to_mesh(&mut portal_mesh, &scene, "portal")?;
+	let portal_ent = find_entity(&file, "portal")?;
+	bake_entity_to_mesh(&mut portal_mesh, &file, portal_ent)?;
 
 	scene_mesh.apply(|vert| {
 		let rgb = vert.color;
@@ -174,30 +170,39 @@ pub fn init_scene() -> EngineResult<(Mesh, Mesh)> {
 
 
 
-fn bake_entity_to_mesh(mesh: &mut Mesh, scene: &scene::ToyFile, name: &str) -> EngineResult<()> {
-	let entity = scene.entities.iter()
+fn find_entity<'s>(file: &'s scene::ToyFile, name: &str) -> EngineResult<&'s scene::EntityData> {
+	file.entities.iter()
 		.find(|e| e.name == name)
-		.ok_or_else(|| format_err!("Couldn't find entity '{}' in scene", name))?;
+		.ok_or_else(|| format_err!("Couldn't find entity '{}' in toy file", name))
+}
 
+fn find_scene<'s>(file: &'s scene::ToyFile, name: &str) -> EngineResult<&'s scene::SceneData> {
+	file.scenes.iter()
+		.find(|e| e.name == name)
+		.ok_or_else(|| format_err!("Couldn't find scene '{}' in toy file", name))
+}
+
+
+fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s scene::ToyFile, entity: &'s scene::EntityData) -> EngineResult<()> {
 	let mesh_id = entity.mesh_id as usize;
 
-	ensure!(mesh_id != 0, "Entity '{}' has no mesh", name);
-	ensure!(mesh_id <= scene.meshes.len(), "Entity '{}' has invalid mesh", name);
+	ensure!(mesh_id != 0, "Entity '{}' has no mesh", entity.name);
+	ensure!(mesh_id <= scene.meshes.len(), "Entity '{}' has invalid mesh", entity.name);
 
 	let mesh_data = &scene.meshes[mesh_id-1];
 
-	ensure!(mesh_data.color_data.len() > 0, "Entity '{}'s mesh has no color data", name);
+	ensure!(mesh_data.color_data.len() > 0, "Entity '{}'s mesh has no color data", entity.name);
 
 	let transform = Mat4::translate(entity.position)
 		* entity.rotation.to_mat4()
 		* Mat4::scale(entity.scale);
 
-	let verts = mesh_data.positions.iter()
+	let verts: Vec<_> = mesh_data.positions.iter()
 		.zip(mesh_data.color_data[0].data.iter())
 		.map(|(&pos, col)| {
 			vertex::ColorVertex::new(transform * pos, col.to_vec3())
 		})
-		.collect::<Vec<_>>();
+		.collect();
 
 	match mesh_data.indices {
 		scene::MeshIndices::U8(ref v) => {

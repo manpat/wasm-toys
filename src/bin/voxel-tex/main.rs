@@ -7,7 +7,7 @@ use engine::DT;
 use engine::graphics::*;
 
 fn main() {
-	engine::init_engine(VoxelApp::new());
+	engine::init_engine(VoxelApp::new);
 }
 
 

@@ -26,7 +26,7 @@ use std::cell::{RefCell, Ref, RefMut};
 // RefCell is an attempt at guarding against mutable ref aliasing across the js/wasm boundary
 static mut ENGINE: Option<RefCell<engine::Engine>> = None;
 
-pub fn init_engine<C: EngineClient + 'static>(client: C) {
+pub fn init_engine<F: FnOnce() -> C, C: EngineClient + 'static>(client: F) {
 	std::panic::set_hook(box |panic_info| {
 		if let Some(loc) = panic_info.location() {
 			console_error!("panic at {}:{}!", loc.file(), loc.line());
@@ -44,7 +44,7 @@ pub fn init_engine<C: EngineClient + 'static>(client: C) {
 	exports::force_linkage();
 
 	unsafe {
-		ENGINE = Some(RefCell::new(engine::Engine::new(client)));
+		ENGINE = Some(RefCell::new(engine::Engine::new(client())));
 		imports::user::user_init();
 	}
 

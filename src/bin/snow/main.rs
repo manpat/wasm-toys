@@ -6,7 +6,7 @@ use common::*;
 use engine::graphics::*;
 
 fn main() {
-	engine::init_engine(SnowApp::new());
+	engine::init_engine(SnowApp::new);
 }
 
 fn rand() -> f32 {
