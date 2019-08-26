@@ -16,6 +16,7 @@ pub mod exports;
 pub mod engine;
 pub mod input;
 pub mod graphics;
+pub mod scene;
 
 pub use engine::{EngineClient, UpdateContext, Ticks, EngineResult};
 pub const DT: f32 = 1.0/60.0;

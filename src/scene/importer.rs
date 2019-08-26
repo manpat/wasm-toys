@@ -14,7 +14,10 @@ struct ToyReader<'data> { buf: &'data [u8] }
 
 impl<'d> ToyReader<'d> {
 	fn read_all(mut self) -> EngineResult<ToyFile> {
-		self.expect_tag(b"TOY\x01")?;
+		self.expect_tag(b"TOY")?;
+
+		let version = self.read_u8()?;
+		ensure!(version == 1, "Version mismatch ({}/{})", version, 1);
 
 		let num_meshes = self.read_u16()? as usize;
 		let mut meshes = Vec::with_capacity(num_meshes);
@@ -52,7 +55,8 @@ impl<'d> ToyReader<'d> {
 
 		let wide_indices = num_vertices >= 256;
 
-		let num_indices = self.read_u16()? as usize;
+		let num_triangles = self.read_u16()? as usize;
+		let num_indices = num_triangles * 3;
 		let indices;
 
 		if wide_indices {
@@ -78,7 +82,7 @@ impl<'d> ToyReader<'d> {
 			let layer_name = self.read_string()?;
 			let num_points = self.read_u16()? as usize;
 			ensure!(num_points == num_vertices, "Color layer '{}' different size to vertex list");
-			
+
 			let mut layer_data = Vec::with_capacity(num_points);
 			for _ in 0..num_points {
 				layer_data.push(self.read_vec4()?);
@@ -111,6 +115,7 @@ impl<'d> ToyReader<'d> {
 
 	fn read_scene(&mut self) -> EngineResult<SceneData> {
 		self.expect_tag(b"SCNE")?;
+
 		let name = self.read_string()?;
 		let num_entities = self.read_u16()? as usize;
 		let mut entities = Vec::with_capacity(num_entities);
@@ -124,10 +129,12 @@ impl<'d> ToyReader<'d> {
 		})
 	}
 
-	fn expect_tag(&mut self, tag: &[u8; 4]) -> EngineResult<()> {
-		ensure!(self.buf.len() >= 4, "Unexpected EOF while expecting tag {:?}", tag);
-		ensure!(&self.buf[..4] == tag, "Expected tag {:?}", tag);
-		self.buf = &self.buf[4..];
+	fn expect_tag<T: Into<Tag>>(&mut self, tag: T) -> EngineResult<()> {
+		let tag = tag.into();
+
+		ensure!(self.buf.len() >= tag.length, "Unexpected EOF while expecting tag {}", tag);
+		ensure!(&self.buf[..tag.length] == &tag.data[..tag.length], "Expected tag {}", tag);
+		self.buf = &self.buf[tag.length..];
 		Ok(())
 	}
 
@@ -192,5 +199,42 @@ impl<'d> ToyReader<'d> {
 		std::str::from_utf8(utf8)
 			.map(Into::into)
 			.map_err(Into::into)
+	}
+}
+
+
+struct Tag {
+	data: [u8; 4],
+	length: usize,
+}
+
+impl From<&[u8; 4]> for Tag {
+	fn from(o: &[u8; 4]) -> Tag {
+		Tag {
+			data: *o,
+			length: 4
+		}
+	}
+}
+
+impl From<&[u8; 3]> for Tag {
+	fn from(o: &[u8; 3]) -> Tag {
+		let mut data = [0; 4];
+		data[0..3].copy_from_slice(o);
+
+		Tag {
+			data,
+			length: 3
+		}
+	}
+}
+
+impl std::fmt::Display for Tag {
+	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+		let s = unsafe {
+			std::str::from_utf8_unchecked(&self.data[..self.length])
+		};
+
+		write!(f, "Tag \"{}\"", s)
 	}
 }

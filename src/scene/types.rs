@@ -1,6 +1,5 @@
 use common::*;
 
-
 #[derive(Debug)]
 pub struct ToyFile {
 	pub scenes: Vec<SceneData>,
@@ -42,3 +41,6 @@ pub struct MeshColorData {
 	pub name: String,
 	pub data: Vec<Vec4>,
 }
+
+// TODO: entity queries
+// TODO: mesh building
