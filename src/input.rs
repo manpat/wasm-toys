@@ -104,6 +104,7 @@ impl InputContext {
 
 			touch_mode: false,
 			
+			// TODO: move to an input controller
 			intent_map: [
 				// Up
 				vec![

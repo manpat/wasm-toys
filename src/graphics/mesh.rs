@@ -64,25 +64,6 @@ impl<T: Vertex> DynamicMesh<T> {
 		self.indices.clear();
 	}
 
-	pub fn add_geometry(&mut self, verts: &[T], indices: &[u16]) {
-		let start = if let Some(s) = self.vert_start() { s } else { return };
-
-		self.vertices.extend_from_slice(verts);
-		self.indices.extend(indices.iter().map(|i| i + start));
-	}
-
-	pub fn add_quad(&mut self, verts: &[T]) {
-		let start = if let Some(s) = self.vert_start() { s } else { return };
-		
-		let es = [
-			start + 0, start + 1, start + 2,
-			start + 0, start + 2, start + 3
-		];
-
-		self.vertices.extend_from_slice(verts);
-		self.indices.extend_from_slice(&es);
-	}
-
 	fn vert_start(&self) -> Option<u16> {
 		let start = self.vertices.len();
 		if start > 0xffff {
@@ -134,15 +115,66 @@ impl<T: Vertex + Copy> BasicDynamicMesh<T> {
 	pub fn add_vertices(&mut self, verts: &[T]) {
 		self.vertices.extend_from_slice(verts);
 	}
+}
 
-	pub fn add_quad(&mut self, verts: &[T]) {
-		assert!(verts.len() >= 4);
 
-		let es = [
-			verts[0], verts[1], verts[2],
-			verts[0], verts[2], verts[3]
-		];
 
-		self.vertices.extend_from_slice(&es);
+
+pub trait IntoIndex {
+	fn into_index(self) -> u16;
+}
+
+impl IntoIndex for u16 {
+	fn into_index(self) -> u16 { self }
+}
+
+impl<'a> IntoIndex for &'a u16 {
+	fn into_index(self) -> u16 { *self }
+}
+
+
+
+pub trait MeshBuilding<T: Vertex> {
+	fn add_geometry<I, Item>(&mut self, verts: &[T], indices: I) where I: IntoIterator<Item=Item>, Item: IntoIndex;
+
+	fn add_quad(&mut self, verts: &[T]) {
+		self.add_geometry(verts, &[0, 1, 2, 0, 2, 3]);
+	}
+
+	fn add_tri_fan(&mut self, vs: &[T]) {
+		assert!(vs.len() >= 3);
+
+		let indices = (1..vs.len()-1)
+			.flat_map(|i| {
+				let i = i as u16;
+				let is = [0, i, i+1];
+				(0..3).map(move |i| is[i])
+			});
+
+		self.add_geometry(vs, indices);
+	}
+
+	fn add_tri_strip(&mut self, vs: &[T]) {
+		assert!(vs.len() >= 3);
+
+		let indices = (1..vs.len()-2)
+			.flat_map(|i| (0..3).map(move |offset| i as u16 + offset));
+
+		self.add_geometry(vs, indices);
+	}
+}
+
+impl<T: Vertex> MeshBuilding<T> for DynamicMesh<T> {
+	fn add_geometry<I, Item>(&mut self, verts: &[T], indices: I) where I: IntoIterator<Item=Item>, Item: IntoIndex {
+		let start = if let Some(s) = self.vert_start() { s } else { return };
+
+		self.vertices.extend_from_slice(verts);
+		self.indices.extend(indices.into_iter().map(|i| i.into_index() + start));
+	}
+}
+
+impl<T: Vertex> MeshBuilding<T> for BasicDynamicMesh<T> {
+	fn add_geometry<I, Item>(&mut self, verts: &[T], indices: I) where I: IntoIterator<Item=Item>, Item: IntoIndex {
+		self.vertices.extend(indices.into_iter().map(|i| verts[i.into_index() as usize]));
 	}
 }

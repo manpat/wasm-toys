@@ -6,7 +6,7 @@ pub mod shader;
 
 pub use self::shader::Shader;
 pub use self::texture::{Texture, TextureBuilder};
-pub use self::mesh::{BasicDynamicMesh, DynamicMesh};
+pub use self::mesh::{BasicDynamicMesh, DynamicMesh, MeshBuilding};
 pub use self::camera::Camera;
 
 pub use crate::imports::gl;

@@ -206,8 +206,8 @@ fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s scene::ToyFile, entity: &
 
 	match mesh_data.indices {
 		scene::MeshIndices::U8(ref v) => {
-			let indices: Vec<_> = v.iter().map(|&i| i as u16).collect();
-			mesh.add_geometry(&verts, &indices);
+			let indices = v.iter().map(|&i| i as u16);
+			mesh.add_geometry(&verts, indices);
 		},
 
 		scene::MeshIndices::U16(ref v) => {
