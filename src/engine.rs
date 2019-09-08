@@ -1,5 +1,5 @@
 use common::math::*;
-use crate::input::InputContext;
+use crate::input::{InputContext, GestureTracker};
 use crate::imports::gl;
 
 pub type Ticks = u32;
@@ -8,7 +8,8 @@ pub type EngineResult<T> = Result<T, failure::Error>;
 pub struct Engine {
 	pub client: Box<dyn EngineClient>,
 
-	pub input: InputContext,
+	pub input_context: InputContext,
+	pub gesture_tracker: GestureTracker,
 
 	pub viewport: Vec2i,
 	pub time_ticks: Ticks,
@@ -23,11 +24,15 @@ impl Engine {
 			gl::enable(gl::Capability::Blend);
 			gl::blend_func(gl::BlendFactor::One, gl::BlendFactor::OneMinusSrcAlpha);
 
-			let input = InputContext::new(client.uses_passive_input());
+			let input_context = InputContext::new(client.uses_passive_input());
+
+			let drag_threshold = client.drag_threshold().unwrap_or(0);
+			let hold_threshold = client.hold_threshold().unwrap_or(std::u32::MAX);
 
 			Engine {
 				client: box client,
-				input,
+				input_context,
+				gesture_tracker: GestureTracker::new(drag_threshold, hold_threshold),
 
 				viewport: Vec2i::new(0, 0),
 				time_ticks: 0,
@@ -41,15 +46,17 @@ impl Engine {
 			gl::viewport(0, 0, x, y);
 		}
 
+		self.gesture_tracker.update(&self.input_context, self.viewport, self.time_ticks);
+
 		let upd_ctx = UpdateContext {
 			ticks: self.time_ticks,
 			viewport: self.viewport,
-			input: &self.input,
+			input: &self.gesture_tracker,
 		};
 
 		self.client.update(upd_ctx);
 
-		self.input.clear_frame_state();
+		self.input_context.clear_frame_state();
 		self.time_ticks = self.time_ticks.wrapping_add(1);
 	}
 }
@@ -57,11 +64,13 @@ impl Engine {
 pub struct UpdateContext<'eng> {
 	pub ticks: Ticks,
 	pub viewport: Vec2i,
-	pub input: &'eng InputContext,
+	pub input: &'eng GestureTracker,
 }
 
 pub trait EngineClient {
 	fn uses_passive_input(&self) -> bool { true }
+	fn drag_threshold(&self) -> Option<u32> { Some(5) }
+	fn hold_threshold(&self) -> Option<Ticks> { None } // Holding disabled by default
 
 	fn init(&mut self) {}
 	fn update(&mut self, _: UpdateContext) {}

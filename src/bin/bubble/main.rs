@@ -47,6 +47,7 @@ impl Bubble {
 
 impl engine::EngineClient for Bubble {
 	fn uses_passive_input(&self) -> bool { false }
+	fn drag_threshold(&self) -> Option<u32> { None } // Always drag
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		unsafe {
@@ -62,9 +63,9 @@ impl engine::EngineClient for Bubble {
 		self.shader.bind();
 
 		// spin
-		if ctx.input.primary_down() {
-			let raw_delta = ctx.input.primary_delta();
-			let delta = -raw_delta.x as f32 * PI / ctx.viewport.y as f32;
+		if ctx.input.dragging() {
+			let raw_delta = ctx.input.frame_delta();
+			let delta = -raw_delta.x as f32 * PI * self.camera.aspect();
 			self.yaw_vel += (delta - self.yaw_vel) / 5.0;
 
 		} else {

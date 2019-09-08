@@ -73,6 +73,7 @@ impl VoxelApp {
 
 impl EngineClient for VoxelApp {
 	fn uses_passive_input(&self) -> bool { false }
+	fn drag_threshold(&self) -> Option<u32> { None } // Always drag
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		unsafe {
@@ -87,10 +88,10 @@ impl EngineClient for VoxelApp {
 		self.program.bind();
 
 		// spin
-		if ctx.input.primary_down() {
-			let raw_delta = ctx.input.primary_delta();
-			let delta_x = -raw_delta.x as f32 * PI / ctx.viewport.y as f32;
-			let delta_y = -raw_delta.y as f32 * PI / ctx.viewport.y as f32;
+		if ctx.input.dragging() {
+			let raw_delta = ctx.input.frame_delta();
+			let delta_x = -raw_delta.x as f32 * PI * self.camera.aspect();
+			let delta_y =  raw_delta.y as f32 * PI;
 			self.angle_vel += (Vec2::new(delta_x, delta_y) - self.angle_vel) / 5.0;
 
 		} else {

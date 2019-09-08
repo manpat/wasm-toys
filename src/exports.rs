@@ -44,7 +44,7 @@ pub fn internal_handle_key_down(key_code: JSString) -> bool {
 	if code.is_none() { return false }
 
 	let code = code.unwrap();
-	get_engine_mut().input.register_keydown(code);
+	get_engine_mut().input_context.register_keydown(code);
 	code.always_consume() // TODO: only if view has focus
 }
 
@@ -54,66 +54,66 @@ pub fn internal_handle_key_up(key_code: JSString) -> bool {
 	if code.is_none() { return false }
 
 	let code = code.unwrap();
-	get_engine_mut().input.register_keyup(code);
+	get_engine_mut().input_context.register_keyup(code);
 	code.always_consume() // TODO: only if view has focus
 }
 
 #[no_mangle]
 pub fn internal_handle_mouse_down(mb: MouseButton, x: i32, y: i32) -> bool {
 	// TODO: this needs to not register clicks outside of views when not pointer locked
-	get_engine_mut().input.register_mousedown(mb, x, y);
+	get_engine_mut().input_context.register_mousedown(mb, x, y);
 	true
 }
 
 #[no_mangle]
 pub fn internal_handle_mouse_up(mb: MouseButton, x: i32, y: i32) -> bool {
 	// TODO: this needs to not register clicks outside of views when not pointer locked
-	get_engine_mut().input.register_mouseup(mb, x, y);
+	get_engine_mut().input_context.register_mouseup(mb, x, y);
 	true
 }
 
 #[no_mangle]
 pub fn internal_handle_mouse_move(x: i32, y: i32, dx: i32, dy: i32) -> bool {
-	get_engine_mut().input.mouse_pos = Vec2i::new(x, y);
-	get_engine_mut().input.mouse_delta = Vec2i::new(dx, dy);
+	get_engine_mut().input_context.mouse_pos = Vec2i::new(x, y);
+	get_engine_mut().input_context.mouse_delta = Vec2i::new(dx, dy);
 	false
 }
 
 #[no_mangle]
 pub fn internal_handle_touch_down(id: i32, x: i32, y: i32) -> bool {
-	get_engine_mut().input.register_touchdown(id, x, y);
+	get_engine_mut().input_context.register_touchdown(id, x, y);
 	true
 }
 
 #[no_mangle]
 pub fn internal_handle_touch_up(id: i32, x: i32, y: i32) -> bool {
-	get_engine_mut().input.register_touchup(id, x, y);
+	get_engine_mut().input_context.register_touchup(id, x, y);
 	true
 }
 
 #[no_mangle]
 pub fn internal_handle_touch_move(id: i32, x: i32, y: i32) -> bool {
-	get_engine_mut().input.register_touchmove(id, x, y);
+	get_engine_mut().input_context.register_touchmove(id, x, y);
 	false
 }
 
 #[no_mangle]
 pub fn internal_handle_focus_gain() {
-	get_engine_mut().input.reset_inputs();
+	get_engine_mut().input_context.reset_inputs();
 }
 
 #[no_mangle]
 pub fn internal_handle_focus_loss() {
-	get_engine_mut().input.reset_inputs();
+	get_engine_mut().input_context.reset_inputs();
 }
 
 #[no_mangle]
 pub fn internal_notify_pointer_lock_change(enabled: bool) {
-	get_engine_mut().input.register_pointer_lock_change(enabled);
+	get_engine_mut().input_context.register_pointer_lock_change(enabled);
 }
 
 
 #[no_mangle]
 pub fn engine_enable_pointer_lock(e: bool) {
-	get_engine_mut().input.enable_pointer_lock(e);
+	get_engine_mut().input_context.enable_pointer_lock(e);
 }

@@ -1,10 +1,6 @@
 use crate::prelude::*;
 use crate::input::core::*;
 
-const HOLD_TICKS: Ticks = 20;
-const DRAG_THRESHOLD: u32 = 15; // TODO: deal with dpi
-
-
 #[derive(Debug)]
 pub struct GestureTracker {
 	client_size: Vec2,
@@ -17,11 +13,14 @@ pub struct GestureTracker {
 
 	hold_begin: Ticks,
 	current_time: Ticks,
+
+	drag_threshold: u32,
+	hold_threshold: u32,
 }
 
 
 impl GestureTracker {
-	pub fn new() -> Self {
+	pub fn new(drag_threshold: u32, hold_threshold: u32) -> Self {
 		Self {
 			client_size: Vec2::zero(),
 
@@ -33,14 +32,18 @@ impl GestureTracker {
 
 			hold_begin: 0,
 			current_time: 0,
+
+			// TODO: deal with dpi?
+			drag_threshold,
+			hold_threshold,
 		}
 	}
 
-	pub fn update(&mut self, ctx: &crate::engine::UpdateContext) {
-		self.client_size = ctx.viewport.to_vec2();
-		self.current_time = ctx.ticks;
+	pub fn update(&mut self, input: &InputContext, viewport: Vec2i, time: Ticks) {
+		self.client_size = viewport.to_vec2();
+		self.current_time = time;
 
-		let (new_state, position, delta) = get_primary_state(ctx.input); 
+		let (new_state, position, delta) = get_primary_state(input);
 		self.state = new_state;
 		self.delta = delta.to_vec2();
 
@@ -53,35 +56,31 @@ impl GestureTracker {
 		if self.state.is_pressed() {
 			self.initial_position = position.to_vec2();
 			self.distance_travelled = 0;
-			self.hold_begin = ctx.ticks;
+			self.hold_begin = time;
 
 		} else if self.state.is_down() {
 			self.distance_travelled = self.distance_travelled.saturating_add((delta.x.abs() + delta.y.abs()) as u32);
 		}
 	}
 
-	pub fn press(&self) -> bool {
-		self.state == ButtonState::DownRecent
-	}
-
-	pub fn release(&self) -> bool {
-		self.state == ButtonState::UpRecent
-	}
+	pub fn press(&self) -> bool { self.state == ButtonState::DownRecent }
+	pub fn release(&self) -> bool { self.state == ButtonState::UpRecent }
+	pub fn down(&self) -> bool { self.state.is_down() }
 
 	pub fn tap(&self) -> bool {
 		self.state == ButtonState::UpRecent
-			&& (self.current_time - self.hold_begin) < HOLD_TICKS
+			&& (self.current_time - self.hold_begin) < self.hold_threshold
 			&& !self.dragging()
 	}
 
 	pub fn holding(&self) -> bool {
 		self.state.is_down()
-			&& (self.current_time - self.hold_begin) >= HOLD_TICKS
+			&& (self.current_time - self.hold_begin) >= self.hold_threshold
 			&& !self.dragging()
 	}
 
 	pub fn dragging(&self) -> bool {
-		self.distance_travelled > DRAG_THRESHOLD
+		self.state != ButtonState::Up && self.distance_travelled >= self.drag_threshold
 	}
 
 	pub fn position(&self) -> Vec2 {

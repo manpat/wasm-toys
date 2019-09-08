@@ -27,8 +27,6 @@ struct App {
 	shader: Shader,
 	mesh: Mesh,
 
-	tracker: engine::input::GestureTracker,
-
 	manifold: ToroidManifold,
 
 	position: Vec2, // on the manifold
@@ -67,7 +65,6 @@ impl App {
 		App {
 			shader,
 			mesh: Mesh::new(),
-			tracker: engine::input::GestureTracker::new(),
 			manifold: ToroidManifold::new(Vec2::splat(10.0)),
 			position: Vec2::zero(),
 			velocity: Vec2::zero(),
@@ -90,10 +87,9 @@ impl App {
 
 impl EngineClient for App {
 	fn uses_passive_input(&self) -> bool { false }
+	fn drag_threshold(&self) -> Option<u32> { Some(10) }
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
-		self.tracker.update(&ctx);
-
 		unsafe {
 			let (r,g,b,_) = Color::hsv(301.0, 0.46, 0.28).to_tuple();
 
@@ -103,16 +99,16 @@ impl EngineClient for App {
 
 		let chart = self.manifold.chart(self.position);
 
-		if self.tracker.dragging() {
-			self.velocity -= self.tracker.frame_delta() * 4.0;
+		if ctx.input.dragging() {
+			self.velocity -= ctx.input.frame_delta() * 4.0;
 		} else {
 			self.velocity *= 1.0 - 4.0*DT;
 		}
 
 		self.position += self.velocity * DT;
 
-		if self.tracker.tap() {
-			let chart_pos = self.tracker.position();
+		if ctx.input.tap() {
+			let chart_pos = ctx.input.position();
 			let manifold_pos = chart.to_manifold(chart_pos).unwrap();
 
 			for _ in 0..100 {
