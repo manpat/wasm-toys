@@ -1,10 +1,7 @@
 #![feature(box_syntax)]
 
 extern crate wasm_toys as engine;
-
-use common::*;
-use engine::DT;
-use engine::graphics::*;
+use engine::prelude::*;
 
 fn main() {
 	engine::init_engine(VoxelApp::new);
@@ -74,7 +71,7 @@ impl VoxelApp {
 	}
 }
 
-impl engine::EngineClient for VoxelApp {
+impl EngineClient for VoxelApp {
 	fn uses_passive_input(&self) -> bool { false }
 
 	fn update(&mut self, ctx: engine::UpdateContext) {

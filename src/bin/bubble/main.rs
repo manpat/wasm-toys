@@ -1,11 +1,7 @@
 extern crate wasm_toys as engine;
+use engine::prelude::*;
 
-use common::*;
-use engine::DT;
-use engine::EngineResult;
 use engine::scene;
-use engine::graphics::*;
-use failure::{ensure, format_err};
 
 pub type Mesh = DynamicMesh<vertex::ColorVertex>;
 

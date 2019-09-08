@@ -1,9 +1,7 @@
 #![feature(box_syntax)]
 
 extern crate wasm_toys as engine;
-
-use common::*;
-use engine::graphics::*;
+use engine::prelude::*;
 
 fn main() {
 	engine::init_engine(SnowApp::new);
@@ -217,7 +215,7 @@ struct Particle {
 }
 
 
-impl engine::EngineClient for SnowApp {
+impl EngineClient for SnowApp {
 	fn uses_passive_input(&self) -> bool { false }
 
 	fn init(&mut self) {

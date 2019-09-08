@@ -4,6 +4,8 @@
 
 pub extern crate common;
 
+pub mod prelude;
+
 pub mod imports;
 
 #[macro_use]

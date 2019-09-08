@@ -1,8 +1,5 @@
 extern crate wasm_toys as engine;
-
-use common::*;
-use engine::graphics::*;
-use engine::console_log;
+use engine::prelude::*;
 
 mod manifold;
 use manifold::*;
@@ -77,7 +74,7 @@ impl App {
 	}
 }
 
-impl engine::EngineClient for App {
+impl EngineClient for App {
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		unsafe {
 			let (r,g,b,_) = Color::hsv(301.0, 0.46, 0.28).to_tuple();
