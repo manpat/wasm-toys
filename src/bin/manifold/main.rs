@@ -88,6 +88,7 @@ impl App {
 impl EngineClient for App {
 	fn uses_passive_input(&self) -> bool { false }
 	fn drag_threshold(&self) -> Option<u32> { Some(10) }
+	fn hold_threshold(&self) -> Option<Ticks> { Some(30) }
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		unsafe {
@@ -122,11 +123,19 @@ impl EngineClient for App {
 
 		for obj in self.objects.iter_mut() {
 			let diff = self.manifold.difference(self.position, obj.pos);
-			let dist = diff.length().powi(2).max(0.1);
+			let dist = diff.length().powf(2.0).max(0.05);
+			let speed = self.velocity.length();
 
 			obj.vel += diff / dist * DT * 0.1;
 			obj.vel += (Vec2::new(rand(), rand()) * 2.0 - 1.0) * DT * 0.002 / dist;
+			obj.vel += (self.velocity - obj.vel) / dist.max(1.0) * speed.powi(4).min(1.0) * DT;
 			obj.vel *= 1.0 - 0.1*DT;
+
+			if ctx.input.holding() {
+				let dist_to_horizon = diff.length().max(0.001) / 5.0;
+
+				obj.vel *= 1.0 - (DT / dist_to_horizon).powf(1.5).min(0.85).max(0.0);
+			}
 
 			obj.pos += obj.vel * DT;
 		}
