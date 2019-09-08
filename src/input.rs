@@ -2,8 +2,6 @@ use common::math::Vec2i;
 use crate::string_arena::JSString;
 use crate::imports::input;
 
-use std::convert::Into;
-
 
 #[repr(usize)]
 #[derive(Copy, Clone, Debug)]

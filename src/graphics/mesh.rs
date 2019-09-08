@@ -59,11 +59,6 @@ impl<T: Vertex> DynamicMesh<T> {
 		}
 	}
 
-	pub fn clear(&mut self) {
-		self.vertices.clear();
-		self.indices.clear();
-	}
-
 	fn vert_start(&self) -> Option<u16> {
 		let start = self.vertices.len();
 		if start > 0xffff {
@@ -104,10 +99,6 @@ impl<T: Vertex + Copy> BasicDynamicMesh<T> {
 		}
 	}
 
-	pub fn clear(&mut self) {
-		self.vertices.clear();
-	}
-
 	pub fn add_vertex(&mut self, vert: T) {
 		self.vertices.push(vert);
 	}
@@ -136,6 +127,7 @@ impl<'a> IntoIndex for &'a u16 {
 
 pub trait MeshBuilding<T: Vertex> {
 	fn add_geometry<I, Item>(&mut self, verts: &[T], indices: I) where I: IntoIterator<Item=Item>, Item: IntoIndex;
+	fn clear(&mut self);
 
 	fn add_quad(&mut self, verts: &[T]) {
 		self.add_geometry(verts, &[0, 1, 2, 0, 2, 3]);
@@ -171,10 +163,19 @@ impl<T: Vertex> MeshBuilding<T> for DynamicMesh<T> {
 		self.vertices.extend_from_slice(verts);
 		self.indices.extend(indices.into_iter().map(|i| i.into_index() + start));
 	}
+
+	fn clear(&mut self) {
+		self.vertices.clear();
+		self.indices.clear();
+	}
 }
 
 impl<T: Vertex> MeshBuilding<T> for BasicDynamicMesh<T> {
 	fn add_geometry<I, Item>(&mut self, verts: &[T], indices: I) where I: IntoIterator<Item=Item>, Item: IntoIndex {
 		self.vertices.extend(indices.into_iter().map(|i| verts[i.into_index() as usize]));
+	}
+
+	fn clear(&mut self) {
+		self.vertices.clear();
 	}
 }
