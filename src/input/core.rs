@@ -23,16 +23,6 @@ pub enum KeyCode {
 pub enum MouseButton { Left, Middle, Right,  Count }
 
 
-#[repr(usize)]
-#[derive(Copy, Clone, Debug)]
-pub enum Intent {
-	Up, Down, Left, Right,
-	Primary, Secondary,
-
-	Count,
-}
-
-
 #[derive(Copy, Clone, Debug)]
 pub enum Button {
 	Key(KeyCode),
@@ -55,18 +45,19 @@ pub enum ButtonState {
 
 
 #[derive(Copy, Clone)]
-struct TouchInstance {
-	id: i32,
-	index: u32,
-	pos: Vec2i,
-	frame_delta: Vec2i,
+pub struct TouchInstance {
+	pub(crate) id: i32,
+	pub(crate) index: u32,
+	pub(crate) pos: Vec2i,
+	pub(crate) frame_delta: Vec2i,
+	pub(crate) state: ButtonState,
 }
 
 
 pub struct InputContext {
 	key_states: [ButtonState; KeyCode::Count as usize],
 	mb_states: [ButtonState; MouseButton::Count as usize],
-	touch_states: Vec<TouchInstance>,
+	pub(crate) touch_states: Vec<TouchInstance>,
 
 	// TODO: probably improve this
 	pub(crate) mouse_pos: Vec2i,
@@ -76,9 +67,7 @@ pub struct InputContext {
 	should_pointer_lock: bool,
 	pub(crate) pointer_lock_allowed: bool,
 
-	touch_mode: bool,
-
-	intent_map: [Vec<Button>; Intent::Count as usize],
+	pub(crate) touch_mode: bool,
 }
 
 
@@ -101,36 +90,6 @@ impl InputContext {
 			pointer_lock_allowed: false,
 
 			touch_mode: false,
-			
-			// TODO: move to an input controller
-			intent_map: [
-				// Up
-				vec![
-					KeyCode::W.into(),
-					KeyCode::Up.into(),
-				],
-				// Down
-				vec![
-					KeyCode::S.into(),
-					KeyCode::Down.into(),
-				],
-				// Left
-				vec![
-					KeyCode::A.into(),
-					KeyCode::Left.into(),
-				],
-				// Right
-				vec![
-					KeyCode::D.into(),
-					KeyCode::Right.into(),
-				],
-
-				// Primary
-				vec![ KeyCode::F.into(), MouseButton::Left.into() ],
-
-				// Secondary
-				vec![ MouseButton::Right.into() ],
-			] 
 		}
 	}
 
@@ -147,7 +106,10 @@ impl InputContext {
 
 		for state in self.touch_states.iter_mut() {
 			state.frame_delta = Vec2i::zero();
+			state.state = state.state.recent_flag_cleared();
 		}
+
+		self.touch_states.retain(|s| s.state != ButtonState::Up);
 	}
 
 	pub fn reset_inputs(&mut self) {
@@ -182,31 +144,6 @@ impl InputContext {
 				self.mb_states[m as usize]
 			}
 		}
-	}
-
-	pub fn intent_state(&self, intent: Intent) -> ButtonState {
-		if intent as usize >= Intent::Count as usize {
-			console_error!("Tried to get state of invalid Intent '{}'", intent as usize);
-			return ButtonState::Up;
-		}
-
-		let mut acc_state = ButtonState::Up;
-
-		for b in self.intent_map[intent as usize].iter() {
-			match self.button_state(*b) {
-				ButtonState::Down => { acc_state = ButtonState::Down }
-
-				ButtonState::DownRecent => if acc_state.is_up() {
-					acc_state = ButtonState::DownRecent
-				}
-				ButtonState::UpRecent => if acc_state.is_up() {
-					acc_state = ButtonState::UpRecent
-				}
-				_ => {}
-			}
-		}
-
-		acc_state
 	}
 
 	// TODO: Use ButtonState here
@@ -289,12 +226,19 @@ impl InputContext {
 			pos: Vec2i::new(x, y),
 			frame_delta: Vec2i::zero(),
 			index,
+			state: ButtonState::DownRecent,
 		});
 	}
 
-	pub(crate) fn register_touchup(&mut self, id: i32, _x: i32, _y: i32) {
-		// TODO: a way to track touch up events
-		self.touch_states.retain(|s| s.id != id);
+	pub(crate) fn register_touchup(&mut self, id: i32, x: i32, y: i32) {
+		if let Some(state) = self.touch_states.iter_mut().find(|s| s.id == id) {
+			let new_pos = Vec2i::new(x, y);
+			let diff = new_pos - state.pos;
+
+			state.pos = new_pos;
+			state.frame_delta += diff;
+			state.state = ButtonState::UpRecent;
+		}
 	}
 
 	pub(crate) fn register_touchmove(&mut self, id: i32, x: i32, y: i32) {

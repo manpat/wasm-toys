@@ -74,20 +74,24 @@ engine_internal.input_module = {
 		target.addEventListener('mousedown', this.on_mouse_down.bind(this), true);
 		target.addEventListener('mouseup', this.on_mouse_up.bind(this), true);
 		target.addEventListener('mousemove', this.on_mouse_move.bind(this), true);
+		target.addEventListener('dblclick', (e) => e.preventDefault(), true);
 
 		// TODO: scroll
 		target.addEventListener('touchstart', this.on_touch_down.bind(this), false);
 		target.addEventListener('touchmove', this.on_touch_move.bind(this), false);
 		target.addEventListener('touchend', this.on_touch_up.bind(this), false);
+		target.addEventListener('touchcancel', this.on_touch_up.bind(this), false);
+
+		target.addEventListener('mouseleave', this.on_focus_loss.bind(this), false);
 	},
 
+
+	// on_focus_gain: function(e) {
+	// 	engine_internal.exports.internal_handle_focus_gain();
+	// },
 
 	on_focus_loss: function(e) {
 		engine_internal.exports.internal_handle_focus_loss();
-	},
-
-	on_focus_gain: function(e) {
-		engine_internal.exports.internal_handle_focus_gain();
 	},
 
 
