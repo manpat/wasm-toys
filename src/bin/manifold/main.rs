@@ -4,6 +4,12 @@ use engine::prelude::*;
 mod manifold;
 use manifold::*;
 
+fn rand() -> f32 {
+	unsafe {
+		engine::imports::util::math_random()
+	}
+}
+
 fn main() {
 	engine::init_engine(App::new);
 }
@@ -14,15 +20,19 @@ type Mesh = BasicDynamicMesh<Vertex>;
 struct ManifoldObject {
 	pos: Vec2,
 	color: Vec3,
+	vel: Vec2,
 }
 
 struct App {
 	shader: Shader,
 	mesh: Mesh,
 
+	tracker: engine::input::GestureTracker,
+
 	manifold: ToroidManifold,
 
 	position: Vec2, // on the manifold
+	velocity: Vec2, // on the manifold
 	objects: Vec<ManifoldObject>,
 }
 
@@ -42,21 +52,25 @@ impl App {
 
 				objects.push(ManifoldObject {
 					pos: manifold_pos,
-					color: Vec3::new(0.0, 0.4, 1.0)
+					color: Vec3::new(0.0, 0.4, 1.0),
+					vel: Vec2::zero(),
 				});
 			}
 		}
 
 		objects.push(ManifoldObject {
 			pos: Vec2::new(0.0, 0.05),
-			color: Vec3::new(1.0, 0.4, 0.0)
+			color: Vec3::new(1.0, 0.4, 0.0),
+			vel: Vec2::zero(),
 		});
 
 		App {
 			shader,
 			mesh: Mesh::new(),
-			manifold: ToroidManifold::new(Vec2::new(3.0, 2.0)),
+			tracker: engine::input::GestureTracker::new(),
+			manifold: ToroidManifold::new(Vec2::splat(10.0)),
 			position: Vec2::zero(),
+			velocity: Vec2::zero(),
 			objects,
 		}
 	}
@@ -75,7 +89,11 @@ impl App {
 }
 
 impl EngineClient for App {
+	fn uses_passive_input(&self) -> bool { false }
+
 	fn update(&mut self, ctx: engine::UpdateContext) {
+		self.tracker.update(&ctx);
+
 		unsafe {
 			let (r,g,b,_) = Color::hsv(301.0, 0.46, 0.28).to_tuple();
 
@@ -83,13 +101,38 @@ impl EngineClient for App {
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 		}
 
-		// let delta = self.manifold.chart(self.position).to_manifold(Vec2::new(0.8, 0.3)).unwrap();
-		// self.position += delta * engine::DT;
+		let chart = self.manifold.chart(self.position);
 
-		if ctx.input.button_state(engine::input::MouseButton::Left.into()).is_pressed() {
-			// let chart_pos = 
-			// console_log(ctx.input.mouse_pos);
+		if self.tracker.dragging() {
+			self.velocity -= self.tracker.frame_delta() * 4.0;
+		} else {
+			self.velocity *= 1.0 - 4.0*DT;
+		}
 
+		self.position += self.velocity * DT;
+
+		if self.tracker.tap() {
+			let chart_pos = self.tracker.position();
+			let manifold_pos = chart.to_manifold(chart_pos).unwrap();
+
+			for _ in 0..100 {
+				self.objects.push(ManifoldObject {
+					pos: manifold_pos,
+					color: Vec3::new(0.3, 1.0, 0.3),
+					vel: Vec2::from_angle(rand() * 2.0 * PI) * rand(),
+				});
+			}
+		}
+
+		for obj in self.objects.iter_mut() {
+			let diff = self.manifold.difference(self.position, obj.pos);
+			let dist = diff.length().powi(2).max(0.1);
+
+			obj.vel += diff / dist * DT * 0.1;
+			obj.vel += (Vec2::new(rand(), rand()) * 2.0 - 1.0) * DT * 0.002 / dist;
+			obj.vel *= 1.0 - 0.1*DT;
+
+			obj.pos += obj.vel * DT;
 		}
 
 		self.rebuild_chart();
