@@ -39,10 +39,6 @@
 				display: block;
 			}
 		</style>
-
-		<script src="/wasm-toys/input.js" async></script>
-		<script src="/wasm-toys/gl.js" async></script>
-		<script src="/wasm-toys/main.js" async></script>
 		<script>
 			"use strict";
 
@@ -56,6 +52,10 @@
 				engine = await initialise_engine(await engine_promise, canvas, {});
 			});
 		</script>
+
+		<script src="/wasm-toys/input.js"></script>
+		<script src="/wasm-toys/gl.js"></script>
+		<script src="/wasm-toys/main.js"></script>
 	</head>
 
 	<body>
