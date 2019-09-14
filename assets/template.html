@@ -40,18 +40,19 @@
 			}
 		</style>
 
-		<script src="/wasm-toys/support.js"></script>
-		<script src="/wasm-toys/input.js"></script>
-		<script src="/wasm-toys/gl.js"></script>
+		<script src="/wasm-toys/input.js" async></script>
+		<script src="/wasm-toys/gl.js" async></script>
+		<script src="/wasm-toys/main.js" async></script>
 		<script>
 			"use strict";
 
 			let engine = null;
+			let engine_promise = fetch("/wasm-toys/[[binary_name]]-[[build_type]].wasm")
+				.then(x => x.arrayBuffer())
+				.then(x => WebAssembly.compile(x));
 
 			window.addEventListener("load", async function() {
-				let engine_promise = compile_engine("/wasm-toys/[[binary_name]]-[[build_type]].wasm");
 				let canvas = document.getElementById("canvas");
-
 				engine = await initialise_engine(await engine_promise, canvas, {});
 			});
 		</script>

@@ -53,13 +53,6 @@ function js_str_to_rust(str) {
 }
 
 
-async function compile_engine(path) {
-	return fetch(path)
-		.then(x => x.arrayBuffer())
-		.then(x => WebAssembly.compile(x));
-}
-
-
 async function initialise_engine(engine_module, canvas, user_imports) {
 	if (TextDecoder && TextEncoder) {
 		engine_internal.text_encoder = new TextEncoder();
