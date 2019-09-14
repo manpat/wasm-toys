@@ -39,6 +39,7 @@
 				display: block;
 			}
 		</style>
+
 		<script>
 			"use strict";
 
@@ -47,15 +48,15 @@
 				.then(x => x.arrayBuffer())
 				.then(x => WebAssembly.compile(x));
 
-			window.addEventListener("load", async function() {
+			async function init() {
 				let canvas = document.getElementById("canvas");
 				engine = await initialise_engine(await engine_promise, canvas, {});
-			});
+			}
 		</script>
 
-		<script src="/wasm-toys/input.js"></script>
-		<script src="/wasm-toys/gl.js"></script>
-		<script src="/wasm-toys/main.js"></script>
+		<script src="/wasm-toys/main.js" async onload="init()"></script>
+		<script src="/wasm-toys/input.js" async></script>
+		<script src="/wasm-toys/gl.js" async></script>
 	</head>
 
 	<body>
