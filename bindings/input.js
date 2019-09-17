@@ -2,34 +2,6 @@
 
 var engine_internal = engine_internal || {};
 
-// Should match KeyCode in input.rs
-const KeyCode = create_enum([
-	"Left", "Right", "Up", "Down",
-	"W", "A", "S", "D",
-	"Q", "E", "F",
-
-	"Space", "Enter", "Escape",
-	"Shift", "Ctrl", "Alt",
-	"F1",
-]);
-
-// Should match MouseButton in input.rs
-const MouseButton = create_enum([
-	"Left", "Middle", "Right"
-]);
-
-// Should match Intent in input.rs
-const Intent = create_enum([
-	"Up",
-	"Down",
-	"Left",
-	"Right",
-
-	"Primary",
-	"Secondary",
-]);
-
-
 engine_internal.input_module = {
 	init: function (canvas) {
 		this.canvas = canvas;

@@ -11,30 +11,10 @@ const merge_objects = Object.assign || function(t) {
     return t;
 };
 
-function create_enum(arr) {
-	let new_enum = {};
-	for (let i = 0; i < arr.length; i++) {
-		new_enum[arr[i]] = i;
-	}
-
-	new_enum.length = arr.length;
-
-	new_enum.contains = function(i) {
-		return i >= 0 && i < this.length;
-	};
-
-	return Object.freeze(new_enum);
-}
-
 
 function heap_memory_view(ptr, len) {
 	let buf_raw = engine_internal.memory.buffer;
 	return new Uint8Array(buf_raw, ptr, len);
-}
-
-function heap_memory_view_i32(ptr, len) {
-	let buf_raw = engine_internal.memory.buffer;
-	return new Int32Array(buf_raw, ptr, len);
 }
 
 function rust_str_to_js(ptr, len) {
