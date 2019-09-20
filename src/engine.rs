@@ -24,7 +24,8 @@ impl Engine {
 			gl::enable(gl::Capability::Blend);
 			gl::blend_func(gl::BlendFactor::One, gl::BlendFactor::OneMinusSrcAlpha);
 
-			let input_context = InputContext::new(client.uses_passive_input());
+			let mut input_context = InputContext::new(client.uses_passive_input());
+			input_context.enable_pointer_lock(client.captures_input());
 
 			let drag_threshold = client.drag_threshold().unwrap_or(0);
 			let hold_threshold = client.hold_threshold().unwrap_or(std::u32::MAX);
@@ -52,6 +53,7 @@ impl Engine {
 			ticks: self.time_ticks,
 			viewport: self.viewport,
 			input: &self.gesture_tracker,
+			input_raw: &self.input_context,
 		};
 
 		self.client.update(upd_ctx);
@@ -65,10 +67,12 @@ pub struct UpdateContext<'eng> {
 	pub ticks: Ticks,
 	pub viewport: Vec2i,
 	pub input: &'eng GestureTracker,
+	pub input_raw: &'eng InputContext,
 }
 
 pub trait EngineClient {
 	fn uses_passive_input(&self) -> bool { true }
+	fn captures_input(&self) -> bool { false }
 	fn drag_threshold(&self) -> Option<u32> { Some(5) }
 	fn hold_threshold(&self) -> Option<Ticks> { None } // Holding disabled by default
 
