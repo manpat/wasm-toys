@@ -11,6 +11,8 @@ pub struct SceneView {
 	static_mesh: DynamicMesh<SceneVertex>,
 	dynamic_mesh: DynamicMesh<SceneVertex>,
 
+	ui_mesh: DynamicMesh<SceneVertex>,
+
 	prev_game_state: u64,
 }
 
@@ -28,6 +30,7 @@ impl SceneView {
 			scene_shader,
 			static_mesh,
 			dynamic_mesh: DynamicMesh::new(),
+			ui_mesh: DynamicMesh::new(),
 
 			prev_game_state: 0,
 		}
@@ -41,6 +44,7 @@ impl SceneView {
 
 		if self.prev_game_state != new_hash {
 			self.build_dynamic(file, game_state).unwrap();
+			self.build_ui(file, game_state).unwrap();
 			self.prev_game_state = new_hash;
 		}
 
@@ -49,6 +53,13 @@ impl SceneView {
 
 		self.static_mesh.draw(gl::DrawMode::Triangles);
 		self.dynamic_mesh.draw(gl::DrawMode::Triangles);
+	}
+
+
+	pub fn draw_ui(&mut self, proj_view: Mat4) {
+		self.scene_shader.bind();
+		self.scene_shader.set_uniform("proj_view", proj_view);
+		self.ui_mesh.draw(gl::DrawMode::Triangles);
 	}
 
 
@@ -103,6 +114,44 @@ impl SceneView {
 
 		Ok(())
 	}
+
+	fn build_ui(&mut self, file: &scene::ToyFile, game_state: &GameState) -> EngineResult<()> {
+		self.ui_mesh.clear();
+
+		if game_state.inventory.is_none() {
+			return Ok(())
+		}
+
+		match game_state.inventory.as_ref().unwrap() {
+			Item::Bucket{ filled } => if *filled {
+				bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "BucketFilled")?, "Col", None)
+			} else {
+				bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "Bucket")?, "Col", None)
+			}
+
+			Item::Fish{ variant } => bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "Fish")?, variant, None),
+			Item::Coin => bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "Coin")?, "Col", None),
+				
+			Item::Soup(ingredients) => {
+				let soup = find_entity(file, "Soup")?;
+				bake_entity_with_new_origin(&mut self.ui_mesh, file, soup, "Col", Some(soup.position))?;
+
+				for item in ingredients {
+					let (ent_name, layer) = match item {
+						Item::Fish{..} => ("Soup_Fish", "scaled"),
+						_ => continue
+					};
+
+					let entity = find_entity(file, ent_name)?;
+					bake_entity_with_new_origin(&mut self.ui_mesh, file, entity, layer, Some(soup.position))?;
+				}
+
+				Ok(())
+			}
+
+			_ => Ok(())
+		}
+	}
 }
 
 pub type SceneVertex = vertex::ColorVertex;
@@ -127,6 +176,11 @@ pub fn bake_entity_to_mesh<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s s
 
 
 pub fn bake_entity_to_mesh_with_color_layer<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s scene::ToyFile, entity: &'s scene::EntityData, col: &str) -> EngineResult<()> {
+	bake_entity_with_new_origin(mesh, scene, entity, col, Some(Vec3::zero()))
+}
+
+
+pub fn bake_entity_with_new_origin<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s scene::ToyFile, entity: &'s scene::EntityData, col: &str, origin: Option<Vec3>) -> EngineResult<()> {
 	let mesh_id = entity.mesh_id as usize;
 
 	ensure!(mesh_id != 0, "Entity '{}' has no mesh", entity.name);
@@ -138,7 +192,8 @@ pub fn bake_entity_to_mesh_with_color_layer<'s>(mesh: &mut DynamicMesh<SceneVert
 		.find(|l| l.name == col)
 		.ok_or_else(|| format_err!("Entity '{}'s mesh has no color data layer named '{}'", entity.name, col))?;
 
-	let transform = Mat4::translate(entity.position)
+	let origin = origin.unwrap_or(entity.position);
+	let transform = Mat4::translate(entity.position - origin)
 		* entity.rotation.to_mat4()
 		* Mat4::scale(entity.scale);
 

@@ -112,6 +112,22 @@ impl App {
 		}
 
 		self.interaction_target_mesh.draw(gl::DrawMode::Points);
+
+		// Draw UI
+		unsafe {
+			gl::clear(gl::DEPTH_BUFFER_BIT);
+		}
+
+		let time = ctx.ticks as f32 * engine::DT;
+
+		let ui_transform = self.camera.projection_matrix()
+			* Mat4::translate(Vec3::new(0.0, -0.3, -1.0))
+			* Mat4::scale(Vec3::splat(0.3))
+			* Mat4::xrot(PI/8.0)
+			* Mat4::yrot(time)
+			;
+
+		self.scene_view.draw_ui(ui_transform);
 	}
 }
 

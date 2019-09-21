@@ -5,7 +5,7 @@ use crate::scene_view::*;
 use crate::player_controller::PlayerController;
 
 
-const INTERACTION_DIST: f32 = 2.5;
+const INTERACTION_DIST: f32 = 3.0;
 const INTERACTION_ARC: f32 = PI / 8.0;
 
 const VISIBILITY_DIST: f32 = 4.0;
