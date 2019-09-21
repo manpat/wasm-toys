@@ -43,7 +43,7 @@ pub fn interaction_targets_in_range(file: &scene::ToyFile, scene_name: &str, ply
 	let player_fwd = ply.rot.forward().to_xz();
 
 	let mut its = interaction_targets_in_scene(file, scene_name)
-		.map(move |mut it| {
+		.map(move |it| {
 			let diff = it.pos.to_xz() - player_pos;
 			let dist = diff.length();
 			let angle = (diff.dot(player_fwd) / dist).acos();

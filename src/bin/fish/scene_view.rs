@@ -1,7 +1,7 @@
 use engine::prelude::*;
 use engine::scene;
 
-use crate::game_state::GameState;
+use crate::game_state::{GameState, Item};
 
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
@@ -55,16 +55,41 @@ impl SceneView {
 	fn build_dynamic(&mut self, file: &scene::ToyFile, game_state: &GameState) -> EngineResult<()> {
 		self.dynamic_mesh.clear();
 
-		if game_state.soup_exists {
-			bake_entity_to_mesh(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Soup")?)?;
+		if game_state.fishing_hole.fish {
+			bake_entity_to_mesh(&mut self.dynamic_mesh, file, find_entity(file, "DYN_FishingHole_Fish")?)?;
+		}
+
+		let soup_valid = game_state.soup.is_valid_soup();
+
+		for item in game_state.soup.inventory.iter() {
+			let (name, layer) = match item {
+				Item::Bucket{ filled: true } => ("DYN_Soup_Base", if soup_valid {"valid"} else {"Col"}),
+				Item::Fish{ scaled: true } => ("DYN_Soup_Fish", "scaled"),
+				_ => bail!("Invalid item in soup! {:?}", item)
+			};
+
+			let entity = find_entity(file, name)?;
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, layer)?;
+		}
+
+		match game_state.bench.inventory {
+			Some(Item::Fish { scaled }) => {
+				let col_layer = if scaled { "scaled" } else { "Col" };
+				let entity = find_entity(file, "DYN_Bench_Fish")?;
+				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, col_layer)?;
+			}
+
+			_ => {}
+		}
+
+		if game_state.shelf.bucket {
+			let entity = find_entity(file, "DYN_Shelf_Bucket")?;
+			bake_entity_to_mesh(&mut self.dynamic_mesh, file, entity)?;
 		}
 
 		Ok(())
 	}
 }
-
-
-
 
 pub type SceneVertex = vertex::ColorVertex;
 
@@ -83,6 +108,11 @@ pub fn bake_static_scene_mesh(file: &scene::ToyFile, scene_name: &str) -> Engine
 
 
 pub fn bake_entity_to_mesh<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s scene::ToyFile, entity: &'s scene::EntityData) -> EngineResult<()> {
+	bake_entity_to_mesh_with_color_layer(mesh, scene, entity, "Col")
+}
+
+
+pub fn bake_entity_to_mesh_with_color_layer<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s scene::ToyFile, entity: &'s scene::EntityData, col: &str) -> EngineResult<()> {
 	let mesh_id = entity.mesh_id as usize;
 
 	ensure!(mesh_id != 0, "Entity '{}' has no mesh", entity.name);
@@ -90,14 +120,16 @@ pub fn bake_entity_to_mesh<'s>(mesh: &mut DynamicMesh<SceneVertex>, scene: &'s s
 
 	let mesh_data = &scene.meshes[mesh_id-1];
 
-	ensure!(mesh_data.color_data.len() > 0, "Entity '{}'s mesh has no color data", entity.name);
+	let color_data = mesh_data.color_data.iter()
+		.find(|l| l.name == col)
+		.ok_or_else(|| format_err!("Entity '{}'s mesh has no color data layer named '{}'", entity.name, col))?;
 
 	let transform = Mat4::translate(entity.position)
 		* entity.rotation.to_mat4()
 		* Mat4::scale(entity.scale);
 
 	let verts: Vec<_> = mesh_data.positions.iter()
-		.zip(mesh_data.color_data[0].data.iter())
+		.zip(color_data.data.iter())
 		.map(|(&pos, col)| {
 			vertex::ColorVertex::new(transform * pos, col.to_vec3())
 		})
