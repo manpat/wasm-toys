@@ -55,16 +55,15 @@ impl SceneView {
 	fn build_dynamic(&mut self, file: &scene::ToyFile, game_state: &GameState) -> EngineResult<()> {
 		self.dynamic_mesh.clear();
 
-		if game_state.fishing_hole.fish {
-			bake_entity_to_mesh(&mut self.dynamic_mesh, file, find_entity(file, "DYN_FishingHole_Fish")?)?;
-		}
+		console_log!("{:#?}", game_state);
 
-		let soup_valid = game_state.soup.is_valid_soup();
+		let soup_valid = game_state.cauldron.is_valid_soup();
 
-		for item in game_state.soup.inventory.iter() {
-			let (name, layer) = match item {
-				Item::Bucket{ filled: true } => ("DYN_Soup_Base", if soup_valid {"valid"} else {"Col"}),
-				Item::Fish{ scaled: true } => ("DYN_Soup_Fish", "scaled"),
+		for item in game_state.cauldron.inventory.iter() {
+			let (name, layer): (_, &str) = match item {
+				Item::Bucket{ filled: true } => ("DYN_Soup_Base", if soup_valid {"broth"} else {"water"}),
+				Item::Bucket{ filled: false } => ("DYN_Soup_Bucket", "Col"),
+				Item::Fish{ variant } => ("DYN_Soup_Fish", &variant),
 				_ => bail!("Invalid item in soup! {:?}", item)
 			};
 
@@ -72,11 +71,10 @@ impl SceneView {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, layer)?;
 		}
 
-		match game_state.bench.inventory {
-			Some(Item::Fish { scaled }) => {
-				let col_layer = if scaled { "scaled" } else { "Col" };
+		match &game_state.bench.inventory {
+			Some(Item::Fish { variant }) => {
 				let entity = find_entity(file, "DYN_Bench_Fish")?;
-				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, col_layer)?;
+				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, &variant)?;
 			}
 
 			_ => {}
@@ -85,6 +83,22 @@ impl SceneView {
 		if game_state.shelf.bucket {
 			let entity = find_entity(file, "DYN_Shelf_Bucket")?;
 			bake_entity_to_mesh(&mut self.dynamic_mesh, file, entity)?;
+		}
+
+		if game_state.market.red_fish {
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Red")?, "red")?;
+		}
+
+		if game_state.market.green_fish {
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Green")?, "green")?;
+		}
+
+		if game_state.market.orange_fish {
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Orange")?, "orange")?;
+		}
+
+		if game_state.market.blue_fish {
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Blue")?, "blue")?;
 		}
 
 		Ok(())

@@ -4,16 +4,17 @@ use engine::prelude::*;
 #[derive(Debug, Clone, Hash, PartialEq)]
 pub enum Item {
 	Bucket{ filled: bool },
-	Fish{ scaled: bool },
+	Fish{ variant: String },
 	Soup(Vec<Item>),
+	Coin,
 }
 
 
 #[derive(Debug, Hash)]
 pub struct GameState {
-	pub soup: SoupState,
+	pub cauldron: CauldronState,
 	pub bench: BenchState,
-	pub fishing_hole: FishingHoleState,
+	pub market: MarketState,
 	pub shelf: ShelfState,
 
 	pub inventory: Option<Item>,
@@ -21,7 +22,7 @@ pub struct GameState {
 
 
 #[derive(Debug, Hash)]
-pub struct SoupState {
+pub struct CauldronState {
 	pub inventory: Vec<Item>,
 }
 
@@ -33,8 +34,11 @@ pub struct BenchState {
 
 
 #[derive(Debug, Hash)]
-pub struct FishingHoleState {
-	pub fish: bool,
+pub struct MarketState {
+	pub red_fish: bool,
+	pub blue_fish: bool,
+	pub green_fish: bool,
+	pub orange_fish: bool,
 }
 
 #[derive(Debug, Hash)]
@@ -47,7 +51,7 @@ pub struct ShelfState {
 impl GameState {
 	pub fn new() -> Self {
 		GameState {
-			soup: SoupState {
+			cauldron: CauldronState {
 				inventory: Vec::new(),
 			},
 
@@ -55,23 +59,24 @@ impl GameState {
 				inventory: None,
 			},
 
-			fishing_hole: FishingHoleState {
-				fish: true,
+			market: MarketState {
+				red_fish: true,
+				blue_fish: true,
+				green_fish: true,
+				orange_fish: true,
 			},
 
 			shelf: ShelfState {
 				bucket: true,
 			},
 
-			inventory: None,
+			inventory: Some(Item::Coin),
 		}
 	}
 
 	pub fn interact(&mut self, id: &str) {
-		console_log!("INTERACTION {}!", id);
-
 		match id {
-			"IT_Cauldron" => self.soup.interact(&mut self.inventory),
+			"IT_Cauldron" => self.cauldron.interact(&mut self.inventory),
 			"IT_Bench" => self.bench.interact(&mut self.inventory),
 			"IT_Shelf" => self.shelf.interact(&mut self.inventory),
 			"IT_WaterHole" => if let Some(Item::Bucket{ ref mut filled }) = self.inventory {
@@ -79,26 +84,31 @@ impl GameState {
 				*filled = true;
 			}
 
-			"IT_FishingHole" => if self.inventory.is_none() && self.fishing_hole.fish {
-				self.fishing_hole.fish = false;
-				self.inventory = Some(Item::Fish{ scaled: false });
-			}
+			"IT_Market_Fish_Blue" => self.market.interact(&mut self.inventory, "blue"),
+			"IT_Market_Fish_Red" => self.market.interact(&mut self.inventory, "red"),
+			"IT_Market_Fish_Orange" => self.market.interact(&mut self.inventory, "orange"),
+			"IT_Market_Fish_Green" => self.market.interact(&mut self.inventory, "green"),
 
-			_ => {}
+			_ => panic!("Unknown interaction! {}", id)
 		}
 	}
 }
 
 
 
-impl SoupState {
+impl CauldronState {
 	fn interact(&mut self, ply_inv: &mut Option<Item>) {
 		// try place broth first, and give bucket back
 		if !self.contains_broth() {
 			if ply_inv == &Some(Item::Bucket{ filled: true }) {
 				self.inventory.push(ply_inv.take().unwrap());
 				*ply_inv = Some(Item::Bucket{ filled: false });
+
+			} else if let Some(Item::Soup(ingredients)) = ply_inv {
+				self.inventory = std::mem::replace(ingredients, Vec::new());
+				*ply_inv = None;
 			}
+			
 			return;
 		}
 
@@ -128,7 +138,7 @@ impl SoupState {
 
 	fn can_place(&self, item: &Item) -> bool {
 		match item {
-			Item::Fish{ scaled: true } => true,
+			Item::Fish{ variant } => variant == "scaled",
 			_ => false,
 		}
 	}
@@ -159,15 +169,15 @@ impl BenchState {
 		}
 
 		match item {
-			Item::Fish{ scaled: false } => true,
+			Item::Fish{ .. } => true,
 			_ => false,
 		}
 	}
 
 	fn inventory_interact(&mut self) -> bool {
-		match self.inventory {
-			Some(Item::Fish{ scaled: false }) => {
-				self.inventory = Some(Item::Fish{ scaled: true });
+		match &self.inventory {
+			Some(Item::Fish{ variant }) if (variant != "scaled") => {
+				self.inventory = Some(Item::Fish{ variant: "scaled".into() });
 				true
 			}
 
@@ -200,6 +210,18 @@ impl ShelfState {
 	}
 }
 
-impl FishingHoleState {
-	
+impl MarketState {
+	fn interact(&mut self, ply_inv: &mut Option<Item>, variant: &str) {
+		if ply_inv == &Some(Item::Coin) {
+			*ply_inv = Some(Item::Fish{ variant: variant.into() });
+
+			match variant {
+				"red" => { self.red_fish = false; }
+				"green" => { self.green_fish = false; }
+				"orange" => { self.orange_fish = false; }
+				"blue" => { self.blue_fish = false; }
+				_ => panic!("Unknown fish variant! {}", variant)
+			}
+		}
+	}
 }
