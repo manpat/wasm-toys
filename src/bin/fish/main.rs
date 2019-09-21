@@ -6,12 +6,12 @@ use engine::scene;
 
 mod player_controller;
 mod interaction_target;
-mod scene_util;
+mod scene_view;
 mod game_state;
 
 use player_controller::PlayerController;
 use interaction_target::*;
-use scene_util::*;
+use scene_view::*;
 use game_state::*;
 
 
@@ -35,11 +35,11 @@ struct App {
 
 	file: scene::ToyFile,
 
-	scene_shader: Shader,
 	it_shader: Shader,
-
-	scene_mesh: DynamicMesh<SceneVertex>,
 	interaction_target_mesh: BasicDynamicMesh<SceneVertex>,
+
+	scene_view: SceneView,
+	game_state: GameState,
 
 	player_controller: PlayerController,
 }
@@ -49,27 +49,24 @@ impl App {
 		let mut camera = Camera::new();
 		camera.set_near_far(0.1, 100.0);
 
-		let scene_shader = Shader::from_combined(
-			include_str!("scene.glsl"),
-			&["position", "color"]
-		);
-
 		let it_shader = Shader::from_combined(
 			include_str!("interaction_target.glsl"),
 			&["position", "color"]
 		);
 
 		let file = scene::load_toy_file(include_bytes!("main.toy")).unwrap();
-		let scene_mesh = bake_scene_mesh(&file, "main").unwrap();
+		let scene_view = SceneView::new(&file);
 
 		App {
 			camera,
 
 			file,
 
-			scene_shader, it_shader,
-			scene_mesh,
+			it_shader,
 			interaction_target_mesh: BasicDynamicMesh::new(),
+
+			scene_view,
+			game_state: GameState::new(),
 
 			player_controller: PlayerController::new(),
 		}
@@ -92,15 +89,12 @@ impl App {
 
 		if ctx.input.tap() {
 			if let Some(it) = static_interaction_targets.iter().find(|it| it.suitability == Some(Suitability::Interactible)) {
-				console_log!("INTERACTION {}!", it.name);
+				self.game_state.interact(&it.name);
 			}
 		}
 
 		// Draw scene
-		self.scene_shader.bind();
-		self.scene_shader.set_uniform("proj_view", self.camera.projection_view());
-
-		self.scene_mesh.draw(gl::DrawMode::Triangles);
+		self.scene_view.draw(self.camera.projection_view(), &self.file, &self.game_state);
 
 		// Draw interaction targets
 		self.it_shader.bind();
