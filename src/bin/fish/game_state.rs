@@ -98,17 +98,30 @@ impl GameState {
 
 impl CauldronState {
 	fn interact(&mut self, ply_inv: &mut Option<Item>) {
+		// take empty bucket
+		if self.contains_bucket() {
+			if ply_inv.is_none() {
+				*ply_inv = Some(Item::Bucket{ filled: false });
+				self.inventory.clear();
+			}
+			return;
+		}
+
 		// try place broth first, and give bucket back
 		if !self.contains_broth() {
 			if ply_inv == &Some(Item::Bucket{ filled: true }) {
 				self.inventory.push(ply_inv.take().unwrap());
 				*ply_inv = Some(Item::Bucket{ filled: false });
 
+			} else if ply_inv == &Some(Item::Bucket{ filled: false }) {
+				self.inventory.push(ply_inv.take().unwrap());
+				*ply_inv = None;
+
 			} else if let Some(Item::Soup(ingredients)) = ply_inv {
 				self.inventory = std::mem::replace(ingredients, Vec::new());
 				*ply_inv = None;
 			}
-			
+
 			return;
 		}
 
@@ -134,6 +147,10 @@ impl CauldronState {
 
 	fn contains_broth(&self) -> bool {
 		self.inventory.contains(&Item::Bucket{ filled: true })
+	}
+
+	fn contains_bucket(&self) -> bool {
+		self.inventory.contains(&Item::Bucket{ filled: false })
 	}
 
 	fn can_place(&self, item: &Item) -> bool {
