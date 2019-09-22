@@ -1,13 +1,13 @@
 use engine::prelude::*;
 
+const MAX_PLAYER_DIST: f32 = 92.0;
+
 pub struct PlayerController {
 	pub pos: Vec3,
 	pub rot: Quat,
 
 	yaw: f32,
 	yaw_vel: f32,
-
-	drag_vel: f32,
 }
 
 impl PlayerController {
@@ -18,8 +18,6 @@ impl PlayerController {
 
 			yaw: 0.0,
 			yaw_vel: 0.0,
-
-			drag_vel: 0.0,
 		}
 	}
 
@@ -59,6 +57,15 @@ impl PlayerController {
 
 		if ctx.input_raw.button_state(KeyCode::A.into()).is_down() {
 			self.pos -= self.rot.right() * 6.0 * DT;
+		}
+
+		// keep near the center
+		let player_dist = self.pos.to_xz().length();
+		if player_dist > MAX_PLAYER_DIST {
+			let to_center = -self.pos.to_xz() / player_dist;
+
+			let amt = (player_dist - MAX_PLAYER_DIST).powi(2);
+			self.pos += (to_center * amt).to_x0z() * DT;
 		}
 	}
 

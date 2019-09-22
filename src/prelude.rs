@@ -6,3 +6,10 @@ pub use crate::{Ticks, EngineResult, EngineClient};
 pub use crate::{console_log, console_warn, console_error};
 
 pub use crate::graphics::*;
+
+
+pub fn rand() -> f32 {
+	unsafe {
+		crate::imports::util::math_random()
+	}
+}

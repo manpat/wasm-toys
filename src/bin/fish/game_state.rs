@@ -7,7 +7,7 @@ pub enum Item {
 	Fish{ variant: String },
 	Soup(Vec<Item>),
 	EmptyBowl,
-	Coin,
+	// Coin,
 }
 
 
@@ -15,7 +15,7 @@ pub enum Item {
 pub struct GameState {
 	pub cauldron: CauldronState,
 	pub bench: BenchState,
-	pub market: MarketState,
+	pub fishing_hole: FishingHoleState,
 	pub shelf: ShelfState,
 	pub table: TableState,
 
@@ -38,7 +38,7 @@ pub struct BenchState {
 
 
 #[derive(Debug, Hash)]
-pub struct MarketState {
+pub struct FishingHoleState {
 	pub red_fish: bool,
 	pub blue_fish: bool,
 	pub green_fish: bool,
@@ -53,7 +53,7 @@ pub struct ShelfState {
 
 #[derive(Debug, Hash)]
 pub struct TableState {
-	pub inventory: Option<Item>,
+	pub inventory: Vec<Item>,
 }
 
 
@@ -69,7 +69,7 @@ impl GameState {
 				inventory: None,
 			},
 
-			market: MarketState {
+			fishing_hole: FishingHoleState {
 				red_fish: true,
 				blue_fish: true,
 				green_fish: true,
@@ -81,10 +81,10 @@ impl GameState {
 			},
 
 			table: TableState {
-				inventory: None,
+				inventory: Vec::new(),
 			},
 
-			inventory: Some(Item::Coin),
+			inventory: None,
 
 			in_bed: false,
 		}
@@ -101,12 +101,9 @@ impl GameState {
 				*filled = true;
 			}
 
-			"IT_Bed" => { self.in_bed = true }
+			"IT_FishinHole" => self.fishing_hole.interact(&mut self.inventory),
 
-			"IT_Market_Fish_Blue" => self.market.interact(&mut self.inventory, "blue"),
-			"IT_Market_Fish_Red" => self.market.interact(&mut self.inventory, "red"),
-			"IT_Market_Fish_Orange" => self.market.interact(&mut self.inventory, "orange"),
-			"IT_Market_Fish_Green" => self.market.interact(&mut self.inventory, "green"),
+			"IT_Bed" => { self.in_bed = true }
 
 			_ => panic!("Unknown interaction! {}", id)
 		}
@@ -248,36 +245,55 @@ impl TableState {
 	fn interact(&mut self, ply_inv: &mut Option<Item>) {
 		// place from player inventory
 		if ply_inv.is_some() && self.can_place(ply_inv.as_ref().unwrap()) {
-			self.inventory = ply_inv.take();
+			self.inventory.push(ply_inv.take().unwrap());
 			return;
 		}
 
 		// eat soup
-		if self.inventory.is_some() {
-			self.inventory = Some(Item::EmptyBowl);
+		if !self.inventory.is_empty() {
+			let bowl = self.inventory.iter_mut().last().unwrap();
+			*bowl = Item::EmptyBowl;
 		}
 	}
 
 	fn can_place(&self, item: &Item) -> bool {
 		match item {
-			Item::Soup(_) => self.inventory.is_none(),
+			Item::Soup(_) => self.inventory.is_empty() || self.inventory.iter().last() == Some(&Item::EmptyBowl),
 			_ => false,
 		}
 	}
 }
 
-impl MarketState {
-	fn interact(&mut self, ply_inv: &mut Option<Item>, variant: &str) {
-		if ply_inv == &Some(Item::Coin) {
-			*ply_inv = Some(Item::Fish{ variant: variant.into() });
+impl FishingHoleState {
+	fn interact(&mut self, ply_inv: &mut Option<Item>) {
+		let mut variants = vec![
+			(&mut self.red_fish, "red"),
+			(&mut self.green_fish, "green"),
+			(&mut self.orange_fish, "orange"),
+			(&mut self.blue_fish, "blue")
+		];
 
-			match variant {
-				"red" => { self.red_fish = false; }
-				"green" => { self.green_fish = false; }
-				"orange" => { self.orange_fish = false; }
-				"blue" => { self.blue_fish = false; }
-				_ => panic!("Unknown fish variant! {}", variant)
+		// try put fish back
+		if let Some(Item::Fish{ variant }) = ply_inv.as_ref() {
+			if let Some(v) = variants.iter_mut().find(|(_, n)| n == variant) {
+				*v.0 = true;
+				*ply_inv = None; 
 			}
+			return;
 		}
+
+		// don't overwrite player inventory
+		if ply_inv.is_some() { return }
+
+		// try take fish
+		variants.retain(|(f, _)| **f);
+		if variants.is_empty() { return }
+
+		let num_valid_variants = variants.len();
+
+		let (ref mut fish, variant) = variants[(rand() * 100.0).floor() as usize % num_valid_variants];
+
+		*ply_inv = Some(Item::Fish{ variant: variant.into() });
+		**fish = false;
 	}
 }

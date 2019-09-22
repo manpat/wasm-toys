@@ -100,49 +100,53 @@ impl SceneView {
 			bake_entity_to_mesh(&mut self.dynamic_mesh, file, entity)?;
 		}
 
-		// draw market
-		if game_state.market.red_fish {
+		// draw fishing hole
+		if game_state.fishing_hole.red_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Red")?, "red")?;
 		}
 
-		if game_state.market.green_fish {
+		if game_state.fishing_hole.green_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Green")?, "green")?;
 		}
 
-		if game_state.market.orange_fish {
+		if game_state.fishing_hole.orange_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Orange")?, "orange")?;
 		}
 
-		if game_state.market.blue_fish {
+		if game_state.fishing_hole.blue_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Blue")?, "blue")?;
 		}
 
 		// draw table
-		match &game_state.table.inventory {
-			Some(Item::Soup(ingredients)) => {
-				console_log!("drawing soup {:?}", ingredients);
-				let soup = find_entity(file, "DYN_Table_Soup")?;
-				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, soup, "Col")?;
+		let stack_dist = 0.15;
+		for (i, item) in game_state.table.inventory.iter().enumerate() {
+			match item {
+				Item::Soup(ingredients) => {
+					let mut soup_entity = find_entity(file, "DYN_Table_Soup")?.clone();
+					soup_entity.position.y += i as f32 * stack_dist;
+					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, &soup_entity, "Col")?;
 
-				for item in ingredients {
-					let (ent_name, layer) = match item {
-						Item::Fish{..} => ("DYN_Table_Soup_Fish", "scaled"),
-						_ => continue
-					};
+					for item in ingredients {
+						let (ent_name, layer) = match item {
+							Item::Fish{..} => ("DYN_Table_Soup_Fish", "scaled"),
+							_ => continue
+						};
 
-					let entity = find_entity(file, ent_name)?;
-					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, layer)?;
+						let mut entity = find_entity(file, ent_name)?.clone();
+						entity.position.y += i as f32 * stack_dist;
+						bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, &entity, layer)?;
+					}
+
 				}
 
-			}
+				Item::EmptyBowl => {
+					let mut entity = find_entity(file, "DYN_Table_EmptyBowl")?.clone();
+					entity.position.y += i as f32 * stack_dist;
+					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, &entity, "Col")?;
+				}
 
-			Some(Item::EmptyBowl) => {
-				let entity = find_entity(file, "DYN_Table_EmptyBowl")?;
-				console_log!("drawing empty bowl {:?}", entity);
-				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, "Col")?;
+				_ => {}
 			}
-
-			_ => {}
 		}
 
 		Ok(())
@@ -163,7 +167,6 @@ impl SceneView {
 			}
 
 			Item::Fish{ variant } => bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "Fish")?, variant, None),
-			Item::Coin => bake_entity_with_new_origin(&mut self.ui_mesh, file, find_entity(file, "Coin")?, "Col", None),
 				
 			Item::Soup(ingredients) => {
 				let soup = find_entity(file, "Soup")?;

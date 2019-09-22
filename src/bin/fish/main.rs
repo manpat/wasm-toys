@@ -21,12 +21,6 @@ fn main() {
 	engine::init_engine(App::new);
 }
 
-fn rand() -> f32 {
-	unsafe {
-		engine::imports::util::math_random()
-	}
-}
-
 // world space particle size / 2
 const PARTICLE_EXTENT: f32 = 1.0 / 15.0;
 
@@ -160,9 +154,11 @@ impl App {
 		self.scene_view.draw(self.camera.projection_view(), &self.file, &self.game_state);
 
 		// Draw interaction targets
+		let it_size = PARTICLE_EXTENT * ctx.viewport.x.min(ctx.viewport.y) as f32;
+
 		self.it_shader.bind();
 		self.it_shader.set_uniform("proj_view", self.camera.projection_view());
-		self.it_shader.set_uniform("particle_scale", 60.0);
+		self.it_shader.set_uniform("particle_scale", it_size);
 
 		self.interaction_target_mesh.clear();
 		for it in static_interaction_targets.iter() {
@@ -187,8 +183,7 @@ impl App {
 			* Mat4::translate(Vec3::new(0.0, -0.3, -1.0))
 			* Mat4::scale(Vec3::splat(0.3))
 			* Mat4::xrot(PI/8.0)
-			* Mat4::yrot(time)
-			;
+			* Mat4::yrot(time);
 
 		self.scene_view.draw_ui(ui_transform);
 
@@ -214,7 +209,7 @@ impl App {
 				self.screen_transition_shader.set_uniform("fade_amount", amt);
 			}
 
-			PlayState::Sleeping(t) => {
+			PlayState::Sleeping(_) => {
 				self.screen_transition_shader.set_uniform("fade_amount", 1.0);
 			}
 
