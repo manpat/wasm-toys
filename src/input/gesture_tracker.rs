@@ -117,7 +117,7 @@ fn get_primary_state(ctx: &InputContext) -> (ButtonState, Vec2i, Vec2i) {
 		}
 	} else {
 		let mouse_state = ctx.button_state(MouseButton::Left.into());
-		if button_state.is_up() && mouse_state != ButtonState::Up {
+		if ctx.is_pointer_locked() || mouse_state != ButtonState::Up {
 			button_state = mouse_state;
 			pos = ctx.mouse_pos;
 			delta += ctx.mouse_delta;

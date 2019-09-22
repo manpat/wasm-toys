@@ -1,4 +1,5 @@
 #![feature(box_syntax)]
+#![feature(clamp)]
 
 extern crate wasm_toys as engine;
 use engine::prelude::*;

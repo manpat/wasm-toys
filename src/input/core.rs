@@ -87,7 +87,7 @@ impl InputContext {
 
 			is_pointer_locked: false,
 			should_pointer_lock: false,
-			pointer_lock_allowed: false,
+			pointer_lock_allowed: true, // TODO: actually get this info
 
 			touch_mode: false,
 		}
