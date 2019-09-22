@@ -6,6 +6,7 @@ pub enum Item {
 	Bucket{ filled: bool },
 	Fish{ variant: String },
 	Soup(Vec<Item>),
+	EmptyBowl,
 	Coin,
 }
 
@@ -16,8 +17,11 @@ pub struct GameState {
 	pub bench: BenchState,
 	pub market: MarketState,
 	pub shelf: ShelfState,
+	pub table: TableState,
 
 	pub inventory: Option<Item>,
+
+	pub in_bed: bool,
 }
 
 
@@ -47,6 +51,12 @@ pub struct ShelfState {
 }
 
 
+#[derive(Debug, Hash)]
+pub struct TableState {
+	pub inventory: Option<Item>,
+}
+
+
 
 impl GameState {
 	pub fn new() -> Self {
@@ -70,7 +80,13 @@ impl GameState {
 				inventory: Some(Item::Bucket{ filled: false }),
 			},
 
+			table: TableState {
+				inventory: None,
+			},
+
 			inventory: Some(Item::Coin),
+
+			in_bed: false,
 		}
 	}
 
@@ -79,10 +95,13 @@ impl GameState {
 			"IT_Cauldron" => self.cauldron.interact(&mut self.inventory),
 			"IT_Bench" => self.bench.interact(&mut self.inventory),
 			"IT_Shelf" => self.shelf.interact(&mut self.inventory),
+			"IT_Table" => self.table.interact(&mut self.inventory),
+
 			"IT_WaterHole" => if let Some(Item::Bucket{ ref mut filled }) = self.inventory {
-				console_log!("Filled bucket!");
 				*filled = true;
 			}
+
+			"IT_Bed" => { self.in_bed = true }
 
 			"IT_Market_Fish_Blue" => self.market.interact(&mut self.inventory, "blue"),
 			"IT_Market_Fish_Red" => self.market.interact(&mut self.inventory, "red"),
@@ -220,6 +239,28 @@ impl ShelfState {
 	fn can_place(&self, item: &Item) -> bool {
 		match item {
 			Item::Bucket{ .. } => self.inventory.is_none(),
+			_ => false,
+		}
+	}
+}
+
+impl TableState {
+	fn interact(&mut self, ply_inv: &mut Option<Item>) {
+		// place from player inventory
+		if ply_inv.is_some() && self.can_place(ply_inv.as_ref().unwrap()) {
+			self.inventory = ply_inv.take();
+			return;
+		}
+
+		// eat soup
+		if self.inventory.is_some() {
+			self.inventory = Some(Item::EmptyBowl);
+		}
+	}
+
+	fn can_place(&self, item: &Item) -> bool {
+		match item {
+			Item::Soup(_) => self.inventory.is_none(),
 			_ => false,
 		}
 	}

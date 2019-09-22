@@ -63,6 +63,17 @@ impl Descriptor {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]
+pub struct BasicVertex (pub Vec3);
+
+impl Vertex for BasicVertex {
+	fn descriptor() -> Descriptor {
+		Descriptor::from(&[3])
+	}
+}
+
+
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
 pub struct ColorVertex {
 	pub pos: Vec3,
 	pub color: Vec3,

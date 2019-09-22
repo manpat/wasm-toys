@@ -4,6 +4,8 @@ extern crate wasm_toys as engine;
 use engine::prelude::*;
 use engine::scene;
 
+use vertex::BasicVertex;
+
 mod player_controller;
 mod interaction_target;
 mod scene_view;
@@ -29,6 +31,13 @@ fn rand() -> f32 {
 const PARTICLE_EXTENT: f32 = 1.0 / 15.0;
 
 
+#[derive(Debug, Copy, Clone)]
+enum PlayState {
+	Normal,
+	EnterSleep(f32),
+	Sleeping(f32),
+	LeaveSleep(f32),
+}
 
 struct App {
 	camera: Camera,
@@ -42,6 +51,10 @@ struct App {
 	game_state: GameState,
 
 	player_controller: PlayerController,
+
+	screen_transition_shader: Shader,
+	screen_transition_mesh: BasicDynamicMesh<BasicVertex>,
+	play_state: PlayState,
 }
 
 impl App {
@@ -53,6 +66,19 @@ impl App {
 			include_str!("interaction_target.glsl"),
 			&["position", "color"]
 		);
+
+		let screen_transition_shader = Shader::from_combined(
+			include_str!("transition.glsl"),
+			&["position"]
+		);
+
+		let mut screen_transition_mesh = BasicDynamicMesh::new();
+		screen_transition_mesh.add_quad(&[
+			BasicVertex(Vec3::new(-1.0, -1.0, 0.0)),
+			BasicVertex(Vec3::new(-1.0,  1.0, 0.0)),
+			BasicVertex(Vec3::new( 1.0,  1.0, 0.0)),
+			BasicVertex(Vec3::new( 1.0, -1.0, 0.0)),
+		]);
 
 		let file = scene::load_toy_file(include_bytes!("main.toy")).unwrap();
 		let scene_view = SceneView::new(&file);
@@ -69,6 +95,10 @@ impl App {
 			game_state: GameState::new(),
 
 			player_controller: PlayerController::new(),
+
+			screen_transition_shader,
+			screen_transition_mesh,
+			play_state: PlayState::LeaveSleep(0.0),
 		}
 	}
 
@@ -82,14 +112,47 @@ impl App {
 
 		self.camera.update(ctx.viewport);
 
-		self.player_controller.update(&ctx, self.camera.aspect());
-		self.player_controller.update_camera(&mut self.camera);
-
 		let static_interaction_targets = interaction_targets_in_range(&self.file, "main", &self.player_controller);
 
-		if ctx.input.tap() {
-			if let Some(it) = static_interaction_targets.iter().find(|it| it.suitability == Some(Suitability::Interactible)) {
-				self.game_state.interact(&it.name);
+		match self.play_state {
+			PlayState::Normal => {
+				self.player_controller.update(&ctx, self.camera.aspect());
+				self.player_controller.update_camera(&mut self.camera);
+
+				if ctx.input.tap() {
+					if let Some(it) = static_interaction_targets.iter().find(|it| it.suitability == Some(Suitability::Interactible)) {
+						self.game_state.interact(&it.name);
+
+						if self.game_state.in_bed {
+							self.play_state = PlayState::EnterSleep(0.0);
+						}
+					}
+				}
+			}
+
+			PlayState::EnterSleep(t) => {
+				if t > 1.0 {
+					self.game_state = GameState::new();
+					self.play_state = PlayState::Sleeping(0.0);
+				} else {
+					self.play_state = PlayState::EnterSleep(t + DT);
+				}
+			}
+
+			PlayState::Sleeping(t) => {
+				if t > 1.0 {
+					self.play_state = PlayState::LeaveSleep(0.0);
+				} else {
+					self.play_state = PlayState::Sleeping(t + 2.0*DT);
+				}
+			}
+
+			PlayState::LeaveSleep(t) => {
+				if t > 1.0 {
+					self.play_state = PlayState::Normal;
+				} else {
+					self.play_state = PlayState::LeaveSleep(t + DT);
+				}
 			}
 		}
 
@@ -128,6 +191,38 @@ impl App {
 			;
 
 		self.scene_view.draw_ui(ui_transform);
+
+		// Draw screen fade
+		unsafe {
+			gl::clear(gl::DEPTH_BUFFER_BIT);
+		}
+
+		let aspect = self.camera.aspect();
+
+		self.screen_transition_shader.bind();
+		self.screen_transition_shader.set_uniform("aspect", aspect);
+
+		match self.play_state {
+			PlayState::Normal => {
+				self.screen_transition_shader.set_uniform("fade_amount", -2.0 * aspect);
+			}
+
+			PlayState::EnterSleep(t) => {
+				let amt = t.ease_exp_inout(-2.0 * aspect, 1.0);
+				self.screen_transition_shader.set_uniform("fade_amount", amt);
+			}
+
+			PlayState::Sleeping(t) => {
+				self.screen_transition_shader.set_uniform("fade_amount", 1.0);
+			}
+
+			PlayState::LeaveSleep(t) => {
+				let amt = t.ease_exp_in(1.0, -2.0 * aspect);
+				self.screen_transition_shader.set_uniform("fade_amount", amt);
+			}
+		}
+
+		self.screen_transition_mesh.draw(gl::DrawMode::Triangles);
 	}
 }
 
@@ -136,7 +231,9 @@ impl EngineClient for App {
 	fn captures_input(&self) -> bool { true }
 
 
-	fn init(&mut self) {}
+	fn init(&mut self) {
+		self.player_controller.update_camera(&mut self.camera);
+	}
 
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		self.update(ctx);

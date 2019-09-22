@@ -68,6 +68,7 @@ impl SceneView {
 
 		console_log!("{:#?}", game_state);
 
+		// draw cauldron
 		let soup_valid = game_state.cauldron.is_valid_soup();
 
 		for item in game_state.cauldron.inventory.iter() {
@@ -82,6 +83,7 @@ impl SceneView {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, layer)?;
 		}
 
+		// draw bench
 		match &game_state.bench.inventory {
 			Some(Item::Fish { variant }) => {
 				let entity = find_entity(file, "DYN_Bench_Fish")?;
@@ -91,12 +93,14 @@ impl SceneView {
 			_ => {}
 		}
 
+		// draw shelf
 		if let Some(Item::Bucket{ filled }) = game_state.shelf.inventory {
 			let name = if filled { "DYN_Shelf_Bucket_Filled" } else { "DYN_Shelf_Bucket" };
 			let entity = find_entity(file, name)?;
 			bake_entity_to_mesh(&mut self.dynamic_mesh, file, entity)?;
 		}
 
+		// draw market
 		if game_state.market.red_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Red")?, "red")?;
 		}
@@ -111,6 +115,34 @@ impl SceneView {
 
 		if game_state.market.blue_fish {
 			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, find_entity(file, "DYN_Market_Fish_Blue")?, "blue")?;
+		}
+
+		// draw table
+		match &game_state.table.inventory {
+			Some(Item::Soup(ingredients)) => {
+				console_log!("drawing soup {:?}", ingredients);
+				let soup = find_entity(file, "DYN_Table_Soup")?;
+				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, soup, "Col")?;
+
+				for item in ingredients {
+					let (ent_name, layer) = match item {
+						Item::Fish{..} => ("DYN_Table_Soup_Fish", "scaled"),
+						_ => continue
+					};
+
+					let entity = find_entity(file, ent_name)?;
+					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, layer)?;
+				}
+
+			}
+
+			Some(Item::EmptyBowl) => {
+				let entity = find_entity(file, "DYN_Table_EmptyBowl")?;
+				console_log!("drawing empty bowl {:?}", entity);
+				bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, file, entity, "Col")?;
+			}
+
+			_ => {}
 		}
 
 		Ok(())
