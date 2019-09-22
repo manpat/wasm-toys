@@ -91,8 +91,9 @@ impl SceneView {
 			_ => {}
 		}
 
-		if game_state.shelf.bucket {
-			let entity = find_entity(file, "DYN_Shelf_Bucket")?;
+		if let Some(Item::Bucket{ filled }) = game_state.shelf.inventory {
+			let name = if filled { "DYN_Shelf_Bucket_Filled" } else { "DYN_Shelf_Bucket" };
+			let entity = find_entity(file, name)?;
 			bake_entity_to_mesh(&mut self.dynamic_mesh, file, entity)?;
 		}
 

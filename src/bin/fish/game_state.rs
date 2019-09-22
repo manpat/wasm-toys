@@ -43,7 +43,7 @@ pub struct MarketState {
 
 #[derive(Debug, Hash)]
 pub struct ShelfState {
-	pub bucket: bool,
+	pub inventory: Option<Item>,
 }
 
 
@@ -67,7 +67,7 @@ impl GameState {
 			},
 
 			shelf: ShelfState {
-				bucket: true,
+				inventory: Some(Item::Bucket{ filled: false }),
 			},
 
 			inventory: Some(Item::Coin),
@@ -207,21 +207,19 @@ impl ShelfState {
 	fn interact(&mut self, ply_inv: &mut Option<Item>) {
 		// place from player inventory
 		if ply_inv.is_some() && self.can_place(ply_inv.as_ref().unwrap()) {
-			self.bucket = true;
-			*ply_inv = None;
+			self.inventory = ply_inv.take();
 			return;
 		}
 
 		// take from bench
-		if self.bucket && ply_inv.is_none() {
-			*ply_inv = Some(Item::Bucket{ filled: false });
-			self.bucket = false;
+		if self.inventory.is_some() && ply_inv.is_none() {
+			*ply_inv = self.inventory.take();
 		}
 	}
 
 	fn can_place(&self, item: &Item) -> bool {
 		match item {
-			Item::Bucket{ filled: false } => !self.bucket,
+			Item::Bucket{ .. } => self.inventory.is_none(),
 			_ => false,
 		}
 	}
