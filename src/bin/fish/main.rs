@@ -143,7 +143,7 @@ impl App {
 				if t > 1.0 {
 					self.play_state = PlayState::LeaveSleep(0.0);
 				} else {
-					self.play_state = PlayState::Sleeping(t + 2.0*DT);
+					self.play_state = PlayState::Sleeping(t + 1.5*DT);
 				}
 			}
 
@@ -151,7 +151,7 @@ impl App {
 				if t > 1.0 {
 					self.play_state = PlayState::Normal;
 				} else {
-					self.play_state = PlayState::LeaveSleep(t + DT);
+					self.play_state = PlayState::LeaveSleep(t + 0.8*DT);
 				}
 			}
 		}
@@ -198,17 +198,19 @@ impl App {
 		}
 
 		let aspect = self.camera.aspect();
+		let max_fade = -2.0 * aspect;
 
 		self.screen_transition_shader.bind();
 		self.screen_transition_shader.set_uniform("aspect", aspect);
+		self.screen_transition_shader.set_uniform("fade_color", Color::hsv(301.0, 0.46, 0.28).to_vec4());
 
 		match self.play_state {
 			PlayState::Normal => {
-				self.screen_transition_shader.set_uniform("fade_amount", -2.0 * aspect);
+				self.screen_transition_shader.set_uniform("fade_amount", max_fade);
 			}
 
 			PlayState::EnterSleep(t) => {
-				let amt = t.ease_exp_inout(-2.0 * aspect, 1.0);
+				let amt = t.ease_exp_inout(max_fade, 1.0);
 				self.screen_transition_shader.set_uniform("fade_amount", amt);
 			}
 
@@ -217,7 +219,7 @@ impl App {
 			}
 
 			PlayState::LeaveSleep(t) => {
-				let amt = t.ease_exp_in(1.0, -2.0 * aspect);
+				let amt = t.ease_exp_in(1.0, max_fade);
 				self.screen_transition_shader.set_uniform("fade_amount", amt);
 			}
 		}

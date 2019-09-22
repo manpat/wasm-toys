@@ -16,7 +16,9 @@ void main() {
 
 precision highp float;
 
+uniform vec4 fade_color;
 uniform float fade_amount;
+
 varying vec2 v_uv;
 
 void main() {
@@ -26,5 +28,5 @@ void main() {
 		discard;
 	}
 
-    gl_FragColor = vec4(1.0, 0.5, 1.0, 1.0);
+    gl_FragColor = fade_color;
 }
