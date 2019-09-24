@@ -2,6 +2,7 @@ use engine::prelude::*;
 
 const MAX_PLAYER_DIST: f32 = 92.0;
 const PLAYER_SPEED: f32 = 6.0;
+const MAX_PITCH: f32 = PI / 3.0;
 
 pub struct PlayerController {
 	pub pos: Vec3,
@@ -9,6 +10,9 @@ pub struct PlayerController {
 
 	yaw: f32,
 	yaw_vel: f32,
+
+	pitch: f32,
+	pitch_vel: f32,
 }
 
 impl PlayerController {
@@ -19,6 +23,9 @@ impl PlayerController {
 
 			yaw: 0.0,
 			yaw_vel: 0.0,
+
+			pitch: 0.0,
+			pitch_vel: 0.0,
 		}
 	}
 
@@ -40,18 +47,20 @@ impl PlayerController {
 
 		} else if ctx.input_raw.is_pointer_locked() {
 			let raw_delta = ctx.input.frame_delta();
-			let delta = -raw_delta.x as f32 * PI * aspect;
-			self.yaw_vel += (delta / 2.0 - self.yaw_vel) / 5.0;
+			let yaw_delta = -raw_delta.x as f32 * PI * aspect;
+			let pitch_delta = raw_delta.y as f32 * PI * aspect;
+			self.yaw_vel += (yaw_delta / 2.0 - self.yaw_vel) / 5.0;
+			self.pitch_vel += (pitch_delta / 4.0 - self.pitch_vel) / 3.0;
 
 		} else {
 			self.yaw_vel *= 0.5;
 		}
 
+		self.pitch = (self.pitch + self.pitch_vel).clamp(-MAX_PITCH, MAX_PITCH);
 		self.yaw += self.yaw_vel;
 
 
 		self.rot = Quat::new(Vec3::from_y(1.0), self.yaw);
-
 		// movement
 		use engine::input::*;
 
@@ -82,7 +91,7 @@ impl PlayerController {
 	}
 
 	pub fn update_camera(&self, camera: &mut Camera) {
-		camera.set_orientation(self.rot);
+		camera.set_orientation(self.rot * Quat::new(Vec3::from_x(1.0), self.pitch));
 		camera.set_position(self.pos + Vec3::from_y(1.4));
 	}
 }

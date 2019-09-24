@@ -66,8 +66,6 @@ impl SceneView {
 	fn build_dynamic(&mut self, file: &scene::ToyFile, game_state: &GameState) -> EngineResult<()> {
 		self.dynamic_mesh.clear();
 
-		console_log!("{:#?}", game_state);
-
 		// draw cauldron
 		let soup_valid = game_state.cauldron.is_valid_soup();
 
