@@ -55,7 +55,7 @@ struct App {
 impl App {
 	fn new() -> Self {
 		let mut camera = Camera::new();
-		camera.set_near_far(0.1, 250.0);
+		camera.set_near_far(0.1, 1000.0);
 
 		let it_shader = Shader::from_combined(
 			include_str!("interaction_target.glsl"),
@@ -163,12 +163,14 @@ impl App {
 
 		self.interaction_target_mesh.clear();
 		for it in static_interaction_targets.iter() {
-			let color = match it.suitability.unwrap() {
-				Suitability::Nearby => Vec3::splat(0.6),
-				Suitability::Interactible => Vec3::splat(1.0),
-			};
+			if self.game_state.can_interact(&it.name) {
+				let color = match it.suitability.unwrap() {
+					Suitability::Nearby => Vec3::splat(0.6),
+					Suitability::Interactible => Vec3::splat(1.0),
+				};
 
-			self.interaction_target_mesh.add_vertex(SceneVertex::new(it.pos, color));
+				self.interaction_target_mesh.add_vertex(SceneVertex::new(it.pos, color));
+			}
 		}
 
 		self.interaction_target_mesh.draw(gl::DrawMode::Points);
