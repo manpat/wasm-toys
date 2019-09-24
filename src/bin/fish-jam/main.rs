@@ -55,7 +55,7 @@ struct App {
 impl App {
 	fn new() -> Self {
 		let mut camera = Camera::new();
-		camera.set_near_far(0.1, 1000.0);
+		camera.set_near_far(0.1, 3000.0);
 
 		let it_shader = Shader::from_combined(
 			include_str!("interaction_target.glsl"),
