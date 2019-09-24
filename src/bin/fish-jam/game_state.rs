@@ -7,7 +7,6 @@ pub enum Item {
 	Fish{ variant: String },
 	Soup(Vec<Item>),
 	EmptyBowl,
-	// Coin,
 }
 
 
@@ -108,6 +107,23 @@ impl GameState {
 			_ => panic!("Unknown interaction! {}", id)
 		}
 	}
+
+	pub fn can_interact(&self, id: &str) -> bool {
+		match id {
+			"IT_Cauldron" => self.cauldron.can_interact(&self.inventory),
+			"IT_Bench" => self.bench.can_interact(&self.inventory),
+			"IT_Shelf" => self.shelf.can_interact(&self.inventory),
+			"IT_Table" => self.table.can_interact(&self.inventory),
+
+			"IT_WaterHole" => self.inventory == Some(Item::Bucket{ filled: false }),
+
+			"IT_FishinHole" => self.fishing_hole.can_interact(&self.inventory),
+
+			"IT_Bed" => true,
+
+			_ => panic!("Unknown interaction! {}", id)
+		}
+	}
 }
 
 
@@ -172,7 +188,17 @@ impl CauldronState {
 	fn can_place(&self, item: &Item) -> bool {
 		match item {
 			Item::Fish{ variant } => variant == "scaled",
+			Item::Soup(_) => self.inventory.is_empty(),
+			Item::Bucket{ .. } => !self.contains_bucket() && !self.contains_broth(),
 			_ => false,
+		}
+	}
+
+	fn can_interact(&self, item: &Option<Item>) -> bool {
+		if let Some(item) = item {
+			self.can_place(item)
+		} else {
+			self.is_valid_soup() || self.contains_bucket()
 		}
 	}
 }
@@ -217,6 +243,14 @@ impl BenchState {
 			_ => false
 		}
 	}
+
+	fn can_interact(&self, item: &Option<Item>) -> bool {
+		match &self.inventory {
+			Some(Item::Fish{ variant }) => (variant != "scaled" || item.is_none()),
+			None if item.is_some() => self.can_place(item.as_ref().unwrap()),
+			_ => false
+		}
+	}
 }
 
 impl ShelfState {
@@ -237,6 +271,14 @@ impl ShelfState {
 		match item {
 			Item::Bucket{ .. } => self.inventory.is_none(),
 			_ => false,
+		}
+	}
+
+	fn can_interact(&self, item: &Option<Item>) -> bool {
+		if let Some(item) = item {
+			self.can_place(item)
+		} else {
+			self.inventory.is_some()
 		}
 	}
 }
@@ -260,6 +302,18 @@ impl TableState {
 		match item {
 			Item::Soup(_) => self.inventory.is_empty() || self.inventory.iter().last() == Some(&Item::EmptyBowl),
 			_ => false,
+		}
+	}
+
+	fn can_interact(&self, item: &Option<Item>) -> bool {
+		if let Some(item) = item {
+			self.can_place(item)
+		} else {
+			// eat soup
+			match self.inventory.iter().last() {
+				Some(Item::Soup(_)) => true,
+				_ => false
+			}
 		}
 	}
 }
@@ -295,5 +349,15 @@ impl FishingHoleState {
 
 		*ply_inv = Some(Item::Fish{ variant: variant.into() });
 		**fish = false;
+	}
+
+	fn can_interact(&self, ply_inv: &Option<Item>) -> bool {
+		if let Some(Item::Fish{ variant }) = ply_inv {
+			// put fish back
+			variant != "scaled"
+		} else {
+			// catch fish
+			ply_inv.is_none() && (self.red_fish || self.green_fish || self.orange_fish || self.blue_fish)
+		}
 	}
 }
