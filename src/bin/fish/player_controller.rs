@@ -54,6 +54,7 @@ impl PlayerController {
 
 		} else {
 			self.yaw_vel *= 0.5;
+			self.pitch_vel *= 0.5;
 		}
 
 		self.pitch = (self.pitch + self.pitch_vel).clamp(-MAX_PITCH, MAX_PITCH);
