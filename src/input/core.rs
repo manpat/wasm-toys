@@ -124,8 +124,8 @@ impl InputContext {
 		self.touch_states.clear();
 	}
 
-	pub fn button_state(&self, b: Button) -> ButtonState {
-		match b {
+	pub fn button_state<B: Into<Button>>(&self, b: B) -> ButtonState {
+		match b.into() {
 			Button::Key(k) => {
 				if k as usize >= KeyCode::Count as usize {
 					console_error!("Tried to get state of invalid KeyCode '{}'", k as usize);
@@ -153,7 +153,7 @@ impl InputContext {
 				.map(|s| s.index == 0)
 				.unwrap_or(false)
 		} else {
-			self.button_state(MouseButton::Left.into())
+			self.button_state(MouseButton::Left)
 				.is_down()
 		}
 	}

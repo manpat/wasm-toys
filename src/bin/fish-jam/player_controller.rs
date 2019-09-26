@@ -65,19 +65,19 @@ impl PlayerController {
 		// movement
 		use engine::input::*;
 
-		if ctx.input_raw.button_state(KeyCode::W.into()).is_down() {
+		if ctx.input_raw.button_state(KeyCode::W).is_down() {
 			self.pos += self.rot.forward() * PLAYER_SPEED * DT;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::S.into()).is_down() {
+		if ctx.input_raw.button_state(KeyCode::S).is_down() {
 			self.pos -= self.rot.forward() * PLAYER_SPEED * DT;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::D.into()).is_down() {
+		if ctx.input_raw.button_state(KeyCode::D).is_down() {
 			self.pos += self.rot.right() * PLAYER_SPEED * DT;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::A.into()).is_down() {
+		if ctx.input_raw.button_state(KeyCode::A).is_down() {
 			self.pos -= self.rot.right() * PLAYER_SPEED * DT;
 		}
 
