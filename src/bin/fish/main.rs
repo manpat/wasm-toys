@@ -105,6 +105,10 @@ impl App {
 			gl::clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
 		}
 
+		if ctx.input_raw.button_state(engine::input::KeyCode::F1).is_pressed() {
+			self.player_controller.toggle_cheat_hacker_mode();
+		}
+
 		self.camera.update(ctx.viewport);
 
 		let static_interaction_targets = interaction_targets_in_range(&self.file, "main", &self.player_controller);

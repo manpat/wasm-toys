@@ -40,7 +40,7 @@ pub fn interaction_targets_in_scene<'s>(file: &'s scene::ToyFile, scene_name: &s
 
 pub fn interaction_targets_in_range(file: &scene::ToyFile, scene_name: &str, ply: &PlayerController) -> Vec<InteractionTarget> {
 	let player_pos = ply.pos.to_xz();
-	let player_fwd = ply.rot.forward().to_xz();
+	let player_fwd = ply.rot.forward().to_xz().normalize();
 
 	let mut its = interaction_targets_in_scene(file, scene_name)
 		.map(move |it| {

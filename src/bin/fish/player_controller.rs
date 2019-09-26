@@ -13,6 +13,8 @@ pub struct PlayerController {
 
 	pitch: f32,
 	pitch_vel: f32,
+
+	cheat_hacker_mode: bool,
 }
 
 impl PlayerController {
@@ -26,6 +28,8 @@ impl PlayerController {
 
 			pitch: 0.0,
 			pitch_vel: 0.0,
+
+			cheat_hacker_mode: false,
 		}
 	}
 
@@ -60,25 +64,36 @@ impl PlayerController {
 		self.pitch = (self.pitch + self.pitch_vel).clamp(-MAX_PITCH, MAX_PITCH);
 		self.yaw += self.yaw_vel;
 
+		if self.cheat_hacker_mode {
+			self.rot = Quat::new(Vec3::from_y(1.0), self.yaw) * Quat::new(Vec3::from_x(1.0), self.pitch);
+		} else {
+			self.rot = Quat::new(Vec3::from_y(1.0), self.yaw);
+		}
 
-		self.rot = Quat::new(Vec3::from_y(1.0), self.yaw);
+
 		// movement
 		use engine::input::*;
 
-		if ctx.input_raw.button_state(KeyCode::W.into()).is_down() {
-			self.pos += self.rot.forward() * PLAYER_SPEED * DT;
+		let mut player_speed = PLAYER_SPEED;
+		if self.cheat_hacker_mode && ctx.input_raw.button_state(KeyCode::Shift).is_down() {
+			player_speed *= 4.0;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::S.into()).is_down() {
-			self.pos -= self.rot.forward() * PLAYER_SPEED * DT;
+
+		if ctx.input_raw.button_state(KeyCode::W).is_down() {
+			self.pos += self.rot.forward() * player_speed * DT;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::D.into()).is_down() {
-			self.pos += self.rot.right() * PLAYER_SPEED * DT;
+		if ctx.input_raw.button_state(KeyCode::S).is_down() {
+			self.pos -= self.rot.forward() * player_speed * DT;
 		}
 
-		if ctx.input_raw.button_state(KeyCode::A.into()).is_down() {
-			self.pos -= self.rot.right() * PLAYER_SPEED * DT;
+		if ctx.input_raw.button_state(KeyCode::D).is_down() {
+			self.pos += self.rot.right() * player_speed * DT;
+		}
+
+		if ctx.input_raw.button_state(KeyCode::A).is_down() {
+			self.pos -= self.rot.right() * player_speed * DT;
 		}
 
 		// keep near the center
@@ -92,8 +107,20 @@ impl PlayerController {
 	}
 
 	pub fn update_camera(&self, camera: &mut Camera) {
-		camera.set_orientation(self.rot * Quat::new(Vec3::from_x(1.0), self.pitch));
+		if self.cheat_hacker_mode {
+			camera.set_orientation(self.rot);
+		} else {
+			camera.set_orientation(self.rot * Quat::new(Vec3::from_x(1.0), self.pitch));
+		}
+
 		camera.set_position(self.pos + Vec3::from_y(1.4));
+	}
+
+	pub fn toggle_cheat_hacker_mode(&mut self) {
+		self.cheat_hacker_mode = !self.cheat_hacker_mode;
+		if !self.cheat_hacker_mode {
+			self.pos.y = 0.0;
+		}
 	}
 }
 
