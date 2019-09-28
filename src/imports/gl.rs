@@ -148,12 +148,18 @@ pub struct BufferID(pub u32);
 pub struct TextureID(pub u32);
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct FramebufferID(pub u32);
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct RenderbufferID(pub u32);
 
 extern {
 	pub fn viewport(x: i32, y: i32, w: i32, h: i32);
 	pub fn scissor(x: i32, y: i32, w: i32, h: i32);
+	pub fn get_viewport(ptr: *mut i32, len: usize);
+
 	pub fn clear_color(r: f32, g: f32, b: f32, a: f32);
 	pub fn clear(_: u32);
 	pub fn enable(_: Capability);
@@ -176,6 +182,18 @@ extern {
 	pub fn active_texture(_: i32);
 	pub fn upload_image_data(w: u32, h: u32, _: Format, _: Type, _: *const u8, _: usize);
 	pub fn tex_parameter(_: TextureParam, _: TextureParamValue);
+
+	pub fn create_framebuffer() -> FramebufferID;
+	pub fn delete_framebuffer(_: FramebufferID);
+	pub fn bind_framebuffer(_: FramebufferID);
+	pub fn get_bound_framebuffer() -> FramebufferID;
+	pub fn framebuffer_texture_2d(_: TextureID);
+	pub fn framebuffer_renderbuffer(_: RenderbufferID);
+
+	pub fn create_renderbuffer() -> RenderbufferID;
+	pub fn delete_renderbuffer(_: RenderbufferID);
+	pub fn bind_renderbuffer(_: RenderbufferID);
+	pub fn renderbuffer_depth_storage(w: i32, h: i32);
 
 	pub fn create_shader_program() -> ProgramID;
 	pub fn create_shader(_: ShaderType, _: RawStr) -> ShaderID;

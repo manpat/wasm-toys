@@ -13,8 +13,19 @@ const merge_objects = Object.assign || function(t) {
 
 
 function heap_memory_view(ptr, len) {
+	if (!ptr) {
+		return null;
+	}
 	let buf_raw = engine_internal.memory.buffer;
 	return new Uint8Array(buf_raw, ptr, len);
+}
+
+function heap_memory_view_u32(ptr, len) {
+	if (!ptr) {
+		return null;
+	}
+	let buf_raw = engine_internal.memory.buffer;
+	return new Uint32Array(buf_raw, ptr, len);
 }
 
 function rust_str_to_js(ptr, len) {

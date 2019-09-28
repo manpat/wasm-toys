@@ -8,6 +8,7 @@ engine_internal.gl_module = {
 	buffers: [null],
 
 	framebuffers: [null],
+	renderbuffers: [null],
 	textures: [null],
 	named_textures: {},
 
@@ -85,6 +86,12 @@ engine_internal.gl_module = {
 			viewport: (x,y,w,h) => gl.viewport(x, y, w, h),
 			scissor: (x,y,w,h) => gl.scissor(x, y, w, h),
 
+			get_viewport: (ptr, len) => {
+				let buf = heap_memory_view_u32(ptr, len);
+				let arr = gl.getParameter(gl.VIEWPORT);
+				buf.set(arr);
+			},
+
 			clear_color: (r,g,b,a) => gl.clearColor(r,g,b,a),
 			clear: (x) => gl.clear(x),
 
@@ -150,6 +157,76 @@ engine_internal.gl_module = {
 			create_framebuffer: () => {
 				this.framebuffers.push(gl.createFramebuffer());
 				return this.framebuffers.length;
+			},
+
+			delete_framebuffer: (fb_id) => {
+				let fb = this.framebuffers[fb_id-1] || null;
+				if (fb) {
+					gl.deleteFramebuffer(fb);
+					this.framebuffers[fb_id-1] = null;
+				}
+			},
+
+			bind_framebuffer: (fb_id) => {
+				let fb = this.framebuffers[fb_id-1] || null;
+				gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+			},
+
+			get_bound_framebuffer: () => {
+				let binding = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+				if (!binding) {
+					return 0;
+				}
+
+				let pos = this.framebuffers.indexOf(binding);
+				return pos+1;
+			},
+
+			framebuffer_texture_2d: (tex_id) => {
+				let texture = this.textures[tex_id-1] || null;
+
+				gl.framebufferTexture2D(
+					gl.FRAMEBUFFER,
+					gl.COLOR_ATTACHMENT0, 
+					gl.TEXTURE_2D, texture, 0
+				);
+			},
+
+			framebuffer_renderbuffer: (rb_id) => {
+				let renderbuffer = this.renderbuffers[rb_id-1] || null;
+
+				gl.framebufferRenderbuffer(
+					gl.FRAMEBUFFER,
+					gl.DEPTH_ATTACHMENT, 
+					gl.RENDERBUFFER, renderbuffer
+				);
+			},
+
+
+			// Renderbuffer stuff
+			create_renderbuffer: () => {
+				this.renderbuffers.push(gl.createRenderbuffer());
+				return this.renderbuffers.length;
+			},
+
+			delete_renderbuffer: (rb_id) => {
+				let fb = this.renderbuffers[rb_id-1] || null;
+				if (fb) {
+					gl.deleteRenderbuffer(fb);
+					this.renderbuffers[rb_id-1] = null;
+				}
+			},
+
+			bind_renderbuffer: (rb_id) => {
+				let fb = this.renderbuffers[rb_id-1] || null;
+				gl.bindRenderbuffer(gl.RENDERBUFFER, fb);
+			},
+
+			renderbuffer_depth_storage: (w, h) => {
+				gl.renderbufferStorage(
+					gl.RENDERBUFFER, gl.DEPTH_COMPONENT16,
+					w, h
+				);
 			},
 
 

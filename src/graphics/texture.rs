@@ -2,7 +2,7 @@ use crate::imports::gl;
 use common::math::*;
 
 pub struct Texture {
-	gl_handle: gl::TextureID,
+	pub(crate) gl_handle: gl::TextureID,
 	format: gl::Format,
 	component_type: gl::Type,
 	size: Vec2i,
@@ -23,6 +23,19 @@ impl Texture {
 		unsafe {
 			gl::active_texture(slot);
 			gl::bind_texture(self.gl_handle);
+		}
+	}
+
+	pub fn reserve(&mut self, size: Vec2i) {
+		self.bind(0);
+		self.size = size;
+
+		unsafe {
+			gl::upload_image_data(
+				size.x as _, size.y as _,
+				self.format, self.component_type,
+				std::ptr::null(), 0
+			);
 		}
 	}
 

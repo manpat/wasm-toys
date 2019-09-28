@@ -3,11 +3,13 @@ pub mod mesh;
 pub mod camera;
 pub mod texture;
 pub mod shader;
+pub mod framebuffer;
 
 pub use self::shader::Shader;
 pub use self::texture::{Texture, TextureBuilder};
 pub use self::mesh::{BasicDynamicMesh, DynamicMesh, MeshBuilding};
 pub use self::camera::Camera;
+pub use self::framebuffer::Framebuffer;
 
 pub use crate::imports::gl;
 
