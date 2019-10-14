@@ -60,7 +60,7 @@ impl App {
 		let it_shader = Shader::from_combined(
 			include_str!("interaction_target.glsl"),
 			&["position", "color"]
-		);
+		); 
 
 		let screen_transition_shader = Shader::from_combined(
 			include_str!("transition.glsl"),
@@ -111,7 +111,8 @@ impl App {
 
 		self.camera.update(ctx.viewport);
 
-		let static_interaction_targets = interaction_targets_in_range(&self.file, "main", &self.player_controller);
+		let main_scene = self.file.find_scene("main").unwrap();
+		let static_interaction_targets = interaction_targets_in_range(main_scene, &self.player_controller);
 
 		match self.play_state {
 			PlayState::Normal => {

@@ -1,7 +1,6 @@
 use engine::prelude::*;
 use engine::scene;
 
-use crate::scene_view::*;
 use crate::player_controller::PlayerController;
 
 
@@ -27,26 +26,22 @@ pub struct InteractionTarget {
 }
 
 
-pub fn interaction_targets_in_scene<'s>(file: &'s scene::ToyFile, scene_name: &str) -> impl Iterator<Item=InteractionTarget> + 's {
-	entities_in_scene(file, scene_name)
-		.filter(|e| e.name.starts_with("IT_"))
-		.map(|e| InteractionTarget {
-			name: e.name.clone(),
-			pos: e.position,
-			suitability: None,
-		})
-}
-
-
-pub fn interaction_targets_in_range(file: &scene::ToyFile, scene_name: &str, ply: &PlayerController) -> Vec<InteractionTarget> {
+pub fn interaction_targets_in_range(scene: scene::SceneRef, ply: &PlayerController) -> Vec<InteractionTarget> {
 	let player_pos = ply.pos.to_xz();
 	let player_fwd = ply.rot.forward().to_xz().normalize();
 
-	let mut its = interaction_targets_in_scene(file, scene_name)
-		.map(move |it| {
-			let diff = it.pos.to_xz() - player_pos;
+	let mut its = scene.entities()
+		.filter(|e| e.name.starts_with("IT_"))
+		.map(move |e| {
+			let diff = e.position.to_xz() - player_pos;
 			let dist = diff.length();
 			let angle = (diff.dot(player_fwd) / dist).acos();
+			let it = InteractionTarget {
+				name: e.name.clone(),
+				pos: e.position,
+				suitability: None,
+			};
+
 			(angle, dist, it)
 		})
 		.filter(|(_, dist, _)| *dist < VISIBILITY_DIST)
