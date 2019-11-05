@@ -6,12 +6,15 @@ use crate::game_state::{GameState, Item};
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+pub type SceneMesh = DynamicMesh<SceneVertex>;
+
+
 pub struct SceneView {
 	scene_shader: Shader,
-	static_mesh: DynamicMesh<SceneVertex>,
-	dynamic_mesh: DynamicMesh<SceneVertex>,
+	static_mesh: SceneMesh,
+	dynamic_mesh: SceneMesh,
 
-	ui_mesh: DynamicMesh<SceneVertex>,
+	ui_mesh: SceneMesh,
 
 	prev_game_state: u64,
 }
@@ -37,8 +40,7 @@ impl SceneView {
 		}
 	}
 
-
-	pub fn draw(&mut self, proj_view: Mat4, file: &scene::ToyFile, game_state: &GameState) {
+	pub fn update(&mut self, file: &scene::ToyFile, game_state: &GameState) {
 		let mut hasher = DefaultHasher::new();
 		game_state.hash(&mut hasher); 
 		let new_hash = hasher.finish();
@@ -48,7 +50,10 @@ impl SceneView {
 			self.build_ui(file, game_state).unwrap();
 			self.prev_game_state = new_hash;
 		}
+	}
 
+
+	pub fn draw(&mut self, proj_view: Mat4) {
 		self.scene_shader.bind();
 		self.scene_shader.set_uniform("proj_view", proj_view);
 
@@ -73,7 +78,7 @@ impl SceneView {
 		for item in game_state.cauldron.inventory.iter() {
 			let (name, layer): (_, &str) = match item {
 				Item::Bucket{ filled: true } => ("DYN_Soup_Base", if soup_valid {"broth"} else {"water"}),
-				Item::Bucket{ filled: false } => ("DYN_Soup_Bucket", "Col"),
+				Item::Bucket{ filled: false } => ("DYN_Soup_Bucket", scene::DEFAULT_COLOR_DATA_NAME),
 				Item::Fish{ variant } => ("DYN_Soup_Fish", &variant),
 				_ => bail!("Invalid item in soup! {:?}", item)
 			};
@@ -126,7 +131,7 @@ impl SceneView {
 				Item::Soup(ingredients) => {
 					let mut soup_entity = find_entity(file, "DYN_Table_Soup")?.deref().clone();
 					soup_entity.position.y += i as f32 * stack_dist;
-					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, scene::EntityRef::from(file, &soup_entity), "Col")?;
+					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, scene::EntityRef::from(file, &soup_entity), scene::DEFAULT_COLOR_DATA_NAME)?;
 
 					for item in ingredients {
 						let (ent_name, layer) = match item {
@@ -144,7 +149,7 @@ impl SceneView {
 				Item::EmptyBowl => {
 					let mut entity = find_entity(file, "DYN_Table_EmptyBowl")?.deref().clone();
 					entity.position.y += i as f32 * stack_dist;
-					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, scene::EntityRef::from(file, &entity), "Col")?;
+					bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, scene::EntityRef::from(file, &entity), scene::DEFAULT_COLOR_DATA_NAME)?;
 				}
 
 				_ => {}
@@ -163,16 +168,16 @@ impl SceneView {
 
 		match game_state.inventory.as_ref().unwrap() {
 			Item::Bucket{ filled } => if *filled {
-				bake_entity_with_new_origin(&mut self.ui_mesh, find_entity(file, "BucketFilled")?, "Col", None)
+				bake_entity_with_new_origin(&mut self.ui_mesh, find_entity(file, "BucketFilled")?, scene::DEFAULT_COLOR_DATA_NAME, None)
 			} else {
-				bake_entity_with_new_origin(&mut self.ui_mesh, find_entity(file, "Bucket")?, "Col", None)
+				bake_entity_with_new_origin(&mut self.ui_mesh, find_entity(file, "Bucket")?, scene::DEFAULT_COLOR_DATA_NAME, None)
 			}
 
 			Item::Fish{ variant } => bake_entity_with_new_origin(&mut self.ui_mesh, find_entity(file, "Fish")?, variant, None),
 				
 			Item::Soup(ingredients) => {
 				let soup = find_entity(file, "Soup")?;
-				bake_entity_with_new_origin(&mut self.ui_mesh, soup, "Col", Some(soup.position))?;
+				bake_entity_with_new_origin(&mut self.ui_mesh, soup, scene::DEFAULT_COLOR_DATA_NAME, Some(soup.position))?;
 
 				for item in ingredients {
 					let (ent_name, layer) = match item {
@@ -194,7 +199,7 @@ impl SceneView {
 
 pub type SceneVertex = vertex::ColorVertex;
 
-pub fn bake_static_scene_mesh(scene: scene::SceneRef) -> EngineResult<DynamicMesh<SceneVertex>> {
+pub fn bake_static_scene_mesh(scene: scene::SceneRef) -> EngineResult<SceneMesh> {
 	let mut scene_mesh = DynamicMesh::new();
 
 	let ents_with_meshes = scene.entities()
@@ -208,17 +213,17 @@ pub fn bake_static_scene_mesh(scene: scene::SceneRef) -> EngineResult<DynamicMes
 }
 
 
-pub fn bake_entity_to_mesh<'s>(mesh: &mut DynamicMesh<SceneVertex>, entity: scene::EntityRef) -> EngineResult<()> {
-	bake_entity_to_mesh_with_color_layer(mesh, entity, "Col")
+pub fn bake_entity_to_mesh<'s>(mesh: &mut SceneMesh, entity: scene::EntityRef) -> EngineResult<()> {
+	bake_entity_with_new_origin(mesh, entity, scene::DEFAULT_COLOR_DATA_NAME, Some(Vec3::zero()))
 }
 
 
-pub fn bake_entity_to_mesh_with_color_layer<'s>(mesh: &mut DynamicMesh<SceneVertex>, entity: scene::EntityRef, col: &str) -> EngineResult<()> {
+pub fn bake_entity_to_mesh_with_color_layer<'s>(mesh: &mut SceneMesh, entity: scene::EntityRef, col: &str) -> EngineResult<()> {
 	bake_entity_with_new_origin(mesh, entity, col, Some(Vec3::zero()))
 }
 
 
-pub fn bake_entity_with_new_origin(mesh: &mut DynamicMesh<SceneVertex>, entity: scene::EntityRef, col: &str, origin: Option<Vec3>) -> EngineResult<()> {
+pub fn bake_entity_with_new_origin(mesh: &mut SceneMesh, entity: scene::EntityRef, col: &str, origin: Option<Vec3>) -> EngineResult<()> {
 	let mesh_data = entity.mesh_data()
 		.ok_or_else(|| format_err!("Entity '{}' has no mesh", entity.name))?;
 
@@ -230,6 +235,13 @@ pub fn bake_entity_with_new_origin(mesh: &mut DynamicMesh<SceneVertex>, entity: 
 		* entity.rotation.to_mat4()
 		* Mat4::scale(entity.scale);
 
+	bake_mesh_with_transform(mesh, mesh_data, color_data, transform);
+
+	Ok(())
+}
+
+
+fn bake_mesh_with_transform(mesh: &mut SceneMesh, mesh_data: &scene::MeshData, color_data: &scene::MeshColorData, transform: Mat4) {
 	let verts: Vec<_> = mesh_data.positions.iter()
 		.zip(color_data.data.iter())
 		.map(|(&pos, col)| {
@@ -247,8 +259,6 @@ pub fn bake_entity_with_new_origin(mesh: &mut DynamicMesh<SceneVertex>, entity: 
 			mesh.add_geometry(&verts, v);
 		}
 	}
-
-	Ok(())
 }
 
 

@@ -149,7 +149,7 @@ pub trait MeshBuilding<T: Vertex> {
 	fn add_tri_strip(&mut self, vs: &[T]) {
 		assert!(vs.len() >= 3);
 
-		let indices = (1..vs.len()-2)
+		let indices = (0..vs.len()-2)
 			.flat_map(|i| (0..3).map(move |offset| i as u16 + offset));
 
 		self.add_geometry(vs, indices);

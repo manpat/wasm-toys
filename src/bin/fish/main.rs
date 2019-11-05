@@ -157,7 +157,8 @@ impl App {
 		}
 
 		// Draw scene
-		self.scene_view.draw(self.camera.projection_view(), &self.file, &self.game_state);
+		self.scene_view.update(&self.file, &self.game_state);
+		self.scene_view.draw(self.camera.projection_view());
 
 		// Draw interaction targets
 		let it_size = PARTICLE_EXTENT * ctx.viewport.x.min(ctx.viewport.y) as f32;
