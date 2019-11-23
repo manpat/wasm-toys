@@ -129,14 +129,6 @@ engine_internal.initialise_imports = function(user_imports) {
 	};
 
 	let math_imports = {
-		Math_tan: Math.tan,
-		Math_acos: Math.acos,
-		Math_asin: Math.asin,
-		Math_atan: Math.atan,
-		Math_atan2: Math.atan2,
-		Math_cbrt: Math.cbrt,
-		Math_hypot: Math.hypot,
-
 		math_random: Math.random, 
 	};
 
