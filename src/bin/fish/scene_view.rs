@@ -108,19 +108,23 @@ impl SceneView {
 
 		// draw fishing hole
 		if game_state.fishing_hole.red_fish {
-			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, find_entity(file, "DYN_Market_Fish_Red")?, "red")?;
+			let entity = find_entity(file, "DYN_Market_Fish_Red")?;
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, entity, "red")?;
 		}
 
 		if game_state.fishing_hole.green_fish {
-			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, find_entity(file, "DYN_Market_Fish_Green")?, "green")?;
+			let entity = find_entity(file, "DYN_Market_Fish_Green")?;
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, entity, "green")?;
 		}
 
 		if game_state.fishing_hole.orange_fish {
-			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, find_entity(file, "DYN_Market_Fish_Orange")?, "orange")?;
+			let entity = find_entity(file, "DYN_Market_Fish_Orange")?;
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, entity, "orange")?;
 		}
 
 		if game_state.fishing_hole.blue_fish {
-			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, find_entity(file, "DYN_Market_Fish_Blue")?, "blue")?;
+			let entity = find_entity(file, "DYN_Market_Fish_Blue")?;
+			bake_entity_to_mesh_with_color_layer(&mut self.dynamic_mesh, entity, "blue")?;
 		}
 
 		// draw table
