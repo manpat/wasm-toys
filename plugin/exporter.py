@@ -1,11 +1,3 @@
-bl_info = {
-	"name": "Toy Scene Exporter",
-	"author": "Patrick Monaghan",
-	"description": "Exports scenes in a format that wasm-toys can eat",
-	"category": "Export",
-	"version": (0, 0, 1),
-	"blender": (2, 80, 0),
-}
 
 import bpy
 
@@ -54,6 +46,7 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 	)
 
 	def execute(self, context):
+		bpy.context.evaluated_depsgraph_get()
 		debug_run = self.debug_run
 
 		fname = self.filepath
@@ -73,6 +66,7 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 		self.collect_scenes()
 
 		for scene in self.scenes:
+			scene["raw"].view_layers[0].update() # to make sure they have a depsgraph
 			self.collect_meshes(scene["raw"])
 			self.collect_entities(scene)
 
@@ -149,7 +143,7 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 
 		return {'FINISHED'}
 
-
+# bpy.ops.export.toy_scene(filepath="/home/patrick/Development/wasm-toys/src/bin/fish/main.toy")
 	def collect_scenes(self):
 		for scene in bpy.data.scenes:
 			self.scenes.append({
@@ -160,6 +154,7 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 
 
 	def collect_meshes(self, scene):
+		# depsgraph = scene.view_layers[0].depsgraph
 		depsgraph = bpy.context.evaluated_depsgraph_get()
 
 		for obj in scene.objects:
@@ -255,19 +250,13 @@ class ExportToyScene(bpy.types.Operator, ExportHelper):
 			scene['entities'].append(len(self.entities)) # entity IDs start at 1
 
 
+	def collect_particle_systems(self, scene):
+		depsgraph = scene['raw'].view_layers[0].depsgraph
+
+		pass
+
+
+
 def menu_func(self, context):
 	self.layout.operator_context = 'INVOKE_DEFAULT'
 	self.layout.operator(ExportToyScene.bl_idname, text="Toy Scene (.toy)")
-
-# Register and add to the file selector
-def register():
-	bpy.utils.register_class(ExportToyScene)
-	bpy.types.TOPBAR_MT_file_export.append(menu_func)
-
-def unregister():
-	bpy.utils.unregister_class(ExportToyScene)
-	bpy.types.TOPBAR_MT_file_export.remove(menu_func)
-
-if __name__ == '__main__':
-	register()
-	bpy.ops.export.toy_scene('INVOKE_DEFAULT')
