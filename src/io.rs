@@ -38,53 +38,53 @@ impl fmt::Write for ConsoleIOBuffer {
 
 #[macro_export]
 macro_rules! console_log {
-    ($fmt:expr $(,$arg:expr)*) => {{
-    	use std::fmt::Write;
-    	use $crate::io::{ConsoleIOBuffer, CONSOLE_LOG_BUFFER};
-    	use $crate::imports::util::console_log_raw;
+	($fmt:expr $(,$arg:expr)*) => {{
+		use std::fmt::Write;
+		use $crate::io::{ConsoleIOBuffer, CONSOLE_LOG_BUFFER};
+		use $crate::imports::util::console_log_raw;
 
-    	#[allow(unused_unsafe)]
+		#[allow(unused_unsafe)]
 		let buf = unsafe {
 			CONSOLE_LOG_BUFFER.get_or_insert_with(|| ConsoleIOBuffer::new(console_log_raw))
 		};
 
-        write!(buf, $fmt $(,$arg)*).unwrap();
-        buf.flush();
-    }};
+		write!(buf, $fmt $(,$arg)*).unwrap();
+		buf.flush();
+	}};
 }
 
 #[macro_export]
 macro_rules! console_warn {
-    ($fmt:expr $(,$arg:expr)*) => {{
-    	use std::fmt::Write;
-    	use $crate::io::{ConsoleIOBuffer, CONSOLE_WARN_BUFFER};
-    	use $crate::imports::util::console_warn_raw;
+	($fmt:expr $(,$arg:expr)*) => {{
+		use std::fmt::Write;
+		use $crate::io::{ConsoleIOBuffer, CONSOLE_WARN_BUFFER};
+		use $crate::imports::util::console_warn_raw;
 
-    	#[allow(unused_unsafe)]
+		#[allow(unused_unsafe)]
 		let buf = unsafe {
 			CONSOLE_WARN_BUFFER.get_or_insert_with(|| ConsoleIOBuffer::new(console_warn_raw))
 		};
 
-        write!(buf, $fmt $(,$arg)*).unwrap();
-        buf.flush();
-    }};
+		write!(buf, $fmt $(,$arg)*).unwrap();
+		buf.flush();
+	}};
 }
 
 #[macro_export]
 macro_rules! console_error {
-    ($fmt:expr $(,$arg:expr)*) => {{
-    	use std::fmt::Write;
-    	use $crate::io::{ConsoleIOBuffer, CONSOLE_ERROR_BUFFER};
-    	use $crate::imports::util::console_error_raw;
+	($fmt:expr $(,$arg:expr)*) => {{
+		use std::fmt::Write;
+		use $crate::io::{ConsoleIOBuffer, CONSOLE_ERROR_BUFFER};
+		use $crate::imports::util::console_error_raw;
 
-    	#[allow(unused_unsafe)]
+		#[allow(unused_unsafe)]
 		let buf = unsafe {
 			CONSOLE_ERROR_BUFFER.get_or_insert_with(|| ConsoleIOBuffer::new(console_error_raw))
 		};
 
-        write!(buf, $fmt $(,$arg)*).unwrap();
-        buf.flush();
-    }};
+		write!(buf, $fmt $(,$arg)*).unwrap();
+		buf.flush();
+	}};
 }
 
 
