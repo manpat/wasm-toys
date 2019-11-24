@@ -121,7 +121,7 @@ impl<'d> ToyReader<'d> {
 		})
 	}
 
-	fn read_entity(&mut self) -> EngineResult<EntityData> {		
+	fn read_entity(&mut self) -> EngineResult<EntityData> {
 		Ok(EntityData {
 			name: self.read_string()?,
 			position: self.read_vec3()?,
