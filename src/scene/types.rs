@@ -11,7 +11,7 @@ pub struct ToyFile {
 #[derive(Debug, Clone)]
 pub struct SceneData {
 	pub name: String,
-	pub entities: Vec<u16>
+	pub entities: Vec<u32>
 }
 
 #[derive(Debug, Clone)]

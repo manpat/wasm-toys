@@ -3,38 +3,39 @@ use crate::EngineResult;
 use std::convert::TryInto;
 
 use common::*;
-use failure::ensure;
+use failure::{ensure, bail, format_err};
+
+const SCENE_VERSION: u8 = 2;
 
 pub fn load_toy_file(data: &[u8]) -> EngineResult<ToyFile> {
 	let reader = ToyReader { buf: data };
 	reader.read_all()
 }
 
+
+type Tag = [u8; 4];
+
 struct ToyReader<'data> { buf: &'data [u8] }
 
 impl<'d> ToyReader<'d> {
 	fn read_all(mut self) -> EngineResult<ToyFile> {
-		self.expect_tag(b"TOY")?;
+		self.read_magic()?;
 
-		let version = self.read_u8()?;
-		ensure!(version == 1, "Version mismatch ({}/{})", version, 1);
+		let mut meshes = Vec::new();
+		let mut entities = Vec::new();
+		let mut scenes = Vec::new();
 
-		let num_meshes = self.read_u16()? as usize;
-		let mut meshes = Vec::with_capacity(num_meshes);
-		for _ in 0..num_meshes {
-			meshes.push(self.read_mesh()?);
-		}
+		while !self.buf.is_empty() {
+			let (tag, mut section) = self.read_section()?;
 
-		let num_entities = self.read_u16()? as usize;
-		let mut entities = Vec::with_capacity(num_entities);
-		for _ in 0..num_entities {
-			entities.push(self.read_entity()?);
-		}
+			let to_err = |e| format_err!("While parsing '{}' section: {}", tag_to_string(&tag), e);
 
-		let num_scenes = self.read_u16()? as usize;
-		let mut scenes = Vec::with_capacity(num_scenes);
-		for _ in 0..num_scenes {
-			scenes.push(self.read_scene()?);
+			match &tag {
+				b"SCNE" => scenes.push(section.read_scene().map_err(to_err)?),
+				b"MESH" => meshes.push(section.read_mesh().map_err(to_err)?),
+				b"ENTY" => entities.push(section.read_entity().map_err(to_err)?),
+				_ => bail!("Unexpected tag '{}' encountered", tag_to_string(&tag))
+			}
 		}
 
 		Ok(ToyFile {
@@ -44,9 +45,28 @@ impl<'d> ToyReader<'d> {
 		})
 	}
 
-	fn read_mesh(&mut self) -> EngineResult<MeshData> {
-		self.expect_tag(b"MESH")?;
+	fn read_magic(&mut self) -> EngineResult<()> {
+		ensure!(&self.buf[..3] == b"TOY", "Expected magic string");
+		self.buf = &self.buf[3..];
 
+		let version = self.read_u8()?;
+		ensure!(version == SCENE_VERSION, "Version mismatch ({}/{})", version, SCENE_VERSION);
+
+		Ok(())
+	}
+
+	fn read_section(&mut self) -> EngineResult<(Tag, ToyReader)> {
+		let tag = self.read_tag()?;
+		let section_size = self.read_u32()? as usize;
+		ensure!(section_size <= self.buf.len(), "Invalid section size for '{}'", tag_to_string(&tag));
+
+		let (section, rest) = self.buf.split_at(section_size);
+		self.buf = rest;
+
+		Ok((tag, ToyReader{ buf: section }))
+	}
+
+	fn read_mesh(&mut self) -> EngineResult<MeshData> {
 		let num_vertices = self.read_u16()? as usize;
 		let mut vertices = Vec::with_capacity(num_vertices);
 		for _ in 0..num_vertices {
@@ -101,9 +121,7 @@ impl<'d> ToyReader<'d> {
 		})
 	}
 
-	fn read_entity(&mut self) -> EngineResult<EntityData> {
-		self.expect_tag(b"ENTY")?;
-		
+	fn read_entity(&mut self) -> EngineResult<EntityData> {		
 		Ok(EntityData {
 			name: self.read_string()?,
 			position: self.read_vec3()?,
@@ -114,13 +132,11 @@ impl<'d> ToyReader<'d> {
 	}
 
 	fn read_scene(&mut self) -> EngineResult<SceneData> {
-		self.expect_tag(b"SCNE")?;
-
 		let name = self.read_string()?;
-		let num_entities = self.read_u16()? as usize;
+		let num_entities = self.read_u32()? as usize;
 		let mut entities = Vec::with_capacity(num_entities);
 		for _ in 0..num_entities {
-			entities.push(self.read_u16()?);
+			entities.push(self.read_u32()?);
 		}
 
 		Ok(SceneData {
@@ -129,13 +145,18 @@ impl<'d> ToyReader<'d> {
 		})
 	}
 
-	fn expect_tag<T: Into<Tag>>(&mut self, tag: T) -> EngineResult<()> {
-		let tag = tag.into();
-
-		ensure!(self.buf.len() >= tag.length, "Unexpected EOF while expecting tag {}", tag);
-		ensure!(&self.buf[..tag.length] == &tag.data[..tag.length], "Expected tag {}", tag);
-		self.buf = &self.buf[tag.length..];
+	fn expect_tag(&mut self, tag: &Tag) -> EngineResult<()> {
+		ensure!(self.buf.len() >= 4, "Unexpected EOF while expecting tag '{}'", tag_to_string(tag));
+		ensure!(&self.buf[..4] == tag, "Expected tag '{}'", tag_to_string(tag));
+		self.buf = &self.buf[4..];
 		Ok(())
+	}
+
+	fn read_tag(&mut self) -> EngineResult<Tag> {
+		ensure!(self.buf.len() >= 4, "Unexpected EOF while expecting tag");
+		let (tag, rest) = self.buf.split_at(4);
+		self.buf = rest;
+		Ok(tag.try_into()?)
 	}
 
 	fn read_u8(&mut self) -> EngineResult<u8> {
@@ -203,38 +224,8 @@ impl<'d> ToyReader<'d> {
 }
 
 
-struct Tag {
-	data: [u8; 4],
-	length: usize,
-}
-
-impl From<&[u8; 4]> for Tag {
-	fn from(o: &[u8; 4]) -> Tag {
-		Tag {
-			data: *o,
-			length: 4
-		}
-	}
-}
-
-impl From<&[u8; 3]> for Tag {
-	fn from(o: &[u8; 3]) -> Tag {
-		let mut data = [0; 4];
-		data[0..3].copy_from_slice(o);
-
-		Tag {
-			data,
-			length: 3
-		}
-	}
-}
-
-impl std::fmt::Display for Tag {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-		let s = unsafe {
-			std::str::from_utf8_unchecked(&self.data[..self.length])
-		};
-
-		write!(f, "Tag \"{}\"", s)
+fn tag_to_string(tag: &Tag) -> String {
+	unsafe {
+		std::str::from_utf8_unchecked(tag).into()
 	}
 }
