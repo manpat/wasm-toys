@@ -1,6 +1,5 @@
 pub mod gl;
 pub mod util;
-pub mod user;
 pub mod input;
 
 #[repr(C)]

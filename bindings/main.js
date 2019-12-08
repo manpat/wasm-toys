@@ -44,7 +44,7 @@ function js_str_to_rust(str) {
 }
 
 
-async function initialise_engine(engine_module, canvas, user_imports) {
+async function initialise_engine(engine_module, canvas) {
 	if (TextDecoder && TextEncoder) {
 		engine_internal.text_encoder = new TextEncoder();
 		engine_internal.text_decoder = new TextDecoder();
@@ -70,7 +70,7 @@ async function initialise_engine(engine_module, canvas, user_imports) {
 	let wasm_params = {
 		// one page = 64kiB
 		mem: new WebAssembly.Memory({initial: 10, maximum: 100}),
-		env: engine_internal.initialise_imports(user_imports)
+		env: engine_internal.initialise_imports()
 	};
 
 	let engine_instance = await WebAssembly.instantiate(engine_module, wasm_params);
@@ -104,13 +104,7 @@ async function initialise_engine(engine_module, canvas, user_imports) {
 }
 
 
-engine_internal.initialise_imports = function(user_imports) {
-	let null_func = function() {};
-	let fixed_user_imports = {
-		user_init: user_imports.on_init || null_func,
-		user_update: user_imports.on_update || null_func,
-	};
-
+engine_internal.initialise_imports = function() {
 	let io_imports = {
 		console_log_raw: (ptr, len) => {
 			console.log(rust_str_to_js(ptr, len));
@@ -133,8 +127,6 @@ engine_internal.initialise_imports = function(user_imports) {
 	};
 
 	return merge_objects({},
-		fixed_user_imports,
-		
 		io_imports,
 		util_imports,
 		math_imports,

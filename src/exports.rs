@@ -4,7 +4,6 @@ use common::*;
 
 use crate::get_engine_mut;
 use crate::string_arena::JSString;
-use crate::imports::user;
 use crate::input::*;
 
 // HACK - without this, this whole module will get dropped
@@ -14,8 +13,6 @@ pub fn force_linkage() {}
 
 #[no_mangle]
 pub fn internal_update(t: f64) {
-	// This is here and not in Engine::update to avoid potential reentrancy
-	unsafe { user::user_update(); }
 	get_engine_mut().update(t);
 }
 
@@ -45,7 +42,7 @@ pub fn internal_handle_key_down(key_code: JSString) -> bool {
 
 	let code = code.unwrap();
 	get_engine_mut().input_context.register_keydown(code);
-	code.always_consume() // TODO: only if view has focus
+	code.always_consume()
 }
 
 #[no_mangle]
@@ -55,19 +52,17 @@ pub fn internal_handle_key_up(key_code: JSString) -> bool {
 
 	let code = code.unwrap();
 	get_engine_mut().input_context.register_keyup(code);
-	code.always_consume() // TODO: only if view has focus
+	code.always_consume()
 }
 
 #[no_mangle]
 pub fn internal_handle_mouse_down(mb: MouseButton, x: i32, y: i32) -> bool {
-	// TODO: this needs to not register clicks outside of views when not pointer locked
 	get_engine_mut().input_context.register_mousedown(mb, x, y);
 	true
 }
 
 #[no_mangle]
 pub fn internal_handle_mouse_up(mb: MouseButton, x: i32, y: i32) -> bool {
-	// TODO: this needs to not register clicks outside of views when not pointer locked
 	get_engine_mut().input_context.register_mouseup(mb, x, y);
 	true
 }

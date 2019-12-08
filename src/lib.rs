@@ -47,7 +47,6 @@ pub fn init_engine<F: FnOnce() -> C, C: EngineClient + 'static>(client: F) {
 
 	unsafe {
 		ENGINE = Some(RefCell::new(engine::Engine::new(client())));
-		imports::user::user_init();
 	}
 
 	get_engine_mut().client.init();

@@ -77,7 +77,7 @@
 				await Promise.all(script_promises);
 
 				let canvas = document.getElementById("canvas");
-				engine = await initialise_engine(await engine_promise, canvas, {});
+				engine = await initialise_engine(await engine_promise, canvas);
 			}
 
 			init();

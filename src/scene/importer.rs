@@ -101,7 +101,7 @@ impl<'d> ToyReader<'d> {
 
 			let layer_name = self.read_string()?;
 			let num_points = self.read_u16()? as usize;
-			ensure!(num_points == num_vertices, "Color layer '{}' different size to vertex list");
+			ensure!(num_points == num_vertices, "Color layer '{}' different size to vertex list", layer_name);
 
 			let mut layer_data = Vec::with_capacity(num_points);
 			for _ in 0..num_points {
