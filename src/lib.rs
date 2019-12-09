@@ -11,7 +11,6 @@ pub mod imports;
 #[macro_use]
 pub mod io;
 pub mod string_arena;
-pub mod map;
 
 pub mod exports;
 
