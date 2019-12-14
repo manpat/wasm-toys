@@ -1,5 +1,5 @@
 use common::math::Vec2i;
-use crate::string_arena::JSString;
+use crate::arena::JSString;
 use crate::imports::input;
 
 

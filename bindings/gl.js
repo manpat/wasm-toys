@@ -1,8 +1,6 @@
 "use strict";
 
-var engine_internal = engine_internal || {};
-
-engine_internal.gl_module = {
+export let gl_module = {
 	programs: [null],
 	shaders: [null],
 	buffers: [null],
@@ -13,8 +11,9 @@ engine_internal.gl_module = {
 	named_textures: {},
 
 
-	init: function(canvas) {
-		this.context = this.create_context(canvas, { stencil: true });
+	init: function(engine) {
+		this.engine = engine;
+		this.context = this.create_context(engine.canvas, { stencil: true });
 	},
 
 
@@ -78,102 +77,100 @@ engine_internal.gl_module = {
 	},
 
 
-	imports: function() {
-		let gl = this.context;
-
+	imports: function(engine) {
 		return {
 			// General state stuff
-			viewport: (x,y,w,h) => gl.viewport(x, y, w, h),
-			scissor: (x,y,w,h) => gl.scissor(x, y, w, h),
+			viewport: (x,y,w,h) => this.context.viewport(x, y, w, h),
+			scissor: (x,y,w,h) => this.context.scissor(x, y, w, h),
 
 			get_viewport: (ptr, len) => {
-				let buf = heap_memory_view_u32(ptr, len);
-				let arr = gl.getParameter(gl.VIEWPORT);
+				let buf = this.engine.wasm.heap_memory_view_u32(ptr, len);
+				let arr = this.context.getParameter(this.context.VIEWPORT);
 				buf.set(arr);
 			},
 
-			clear_color: (r,g,b,a) => gl.clearColor(r,g,b,a),
-			clear: (x) => gl.clear(x),
+			clear_color: (r,g,b,a) => this.context.clearColor(r,g,b,a),
+			clear: (x) => this.context.clear(x),
 
-			enable: (e) => gl.enable(e),
-			disable: (e) => gl.disable(e),
+			enable: (e) => this.context.enable(e),
+			disable: (e) => this.context.disable(e),
 
-			blend_func: (s, d) => gl.blendFunc(s, d),
+			blend_func: (s, d) => this.context.blendFunc(s, d),
 			
 			// Draw stuff
-			draw_arrays: (draw_mode, start, count) => gl.drawArrays(draw_mode, start, count),
-			draw_elements: (draw_mode, count, type, offset) => gl.drawElements(draw_mode, count, type, offset),
+			draw_arrays: (draw_mode, start, count) => this.context.drawArrays(draw_mode, start, count),
+			draw_elements: (draw_mode, count, type, offset) => this.context.drawElements(draw_mode, count, type, offset),
 
 
 			// Buffer stuff
 			create_buffer: () => {
-				this.buffers.push(gl.createBuffer());
+				this.buffers.push(this.context.createBuffer());
 				return this.buffers.length;
 			},
 
 			bind_buffer: (target, id) => {
 				let buf = this.buffers[id-1] || null;
-				gl.bindBuffer(target, buf);
+				this.context.bindBuffer(target, buf);
 			},
 
 			upload_buffer_data: (target, ptr, len) => {
-				let buf = heap_memory_view(ptr, len);
-				gl.bufferData(target, buf, gl.STATIC_DRAW);
+				let buf = this.engine.wasm.heap_memory_view(ptr, len);
+				this.context.bufferData(target, buf, this.context.STATIC_DRAW);
 			},
 
-			vertex_attrib_pointer: function (attrib, components, component_type, normalize, stride, offset) {
-				gl.vertexAttribPointer(attrib, components, component_type, normalize, stride, offset);
+			vertex_attrib_pointer: (attrib, components, component_type, normalize, stride, offset) => {
+				this.context.vertexAttribPointer(attrib, components, component_type, normalize, stride, offset);
 			},
 
-			enable_attribute: (attrib) => gl.enableVertexAttribArray(attrib),
-			disable_attribute: (attrib) => gl.disableVertexAttribArray(attrib),
+			enable_attribute: (attrib) => this.context.enableVertexAttribArray(attrib),
+			disable_attribute: (attrib) => this.context.disableVertexAttribArray(attrib),
 
 
 			// Texture stuff
 			create_texture: () => {
-				this.textures.push(gl.createTexture());
+				this.textures.push(this.context.createTexture());
 				return this.textures.length;
 			},
 
 			bind_texture: (id) => {
 				let texture = this.textures[id-1] || null;
-				gl.bindTexture(gl.TEXTURE_2D, texture);
+				this.context.bindTexture(this.context.TEXTURE_2D, texture);
 			},
 
-			active_texture: (id) => gl.activeTexture(gl.TEXTURE0 + id),
+			active_texture: (id) => this.context.activeTexture(this.context.TEXTURE0 + id),
 
 			upload_image_data: (w, h, format, type, ptr, len) => {
-				let buf = heap_memory_view(ptr, len);
-				gl.texImage2D(gl.TEXTURE_2D, 0, format, w, h, 0,
+				let buf = this.engine.wasm.heap_memory_view(ptr, len);
+				this.context.texImage2D(this.context.TEXTURE_2D, 0, format, w, h, 0,
 					format, type, buf);
 			},
 
 			tex_parameter: (param, value) => {
-				gl.texParameteri(gl.TEXTURE_2D, param, value);
+				this.context.texParameteri(this.context.TEXTURE_2D, param, value);
 			},
 
 
 			// Framebuffer stuff
 			create_framebuffer: () => {
-				this.framebuffers.push(gl.createFramebuffer());
+				this.framebuffers.push(this.context.createFramebuffer());
 				return this.framebuffers.length;
 			},
 
 			delete_framebuffer: (fb_id) => {
 				let fb = this.framebuffers[fb_id-1] || null;
 				if (fb) {
-					gl.deleteFramebuffer(fb);
+					this.context.deleteFramebuffer(fb);
 					this.framebuffers[fb_id-1] = null;
 				}
 			},
 
 			bind_framebuffer: (fb_id) => {
 				let fb = this.framebuffers[fb_id-1] || null;
-				gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+				this.context.bindFramebuffer(this.context.FRAMEBUFFER, fb);
 			},
 
 			get_bound_framebuffer: () => {
-				let binding = gl.getParameter(gl.FRAMEBUFFER_BINDING);
+				let binding = this.context.getParameter(this.context.FRAMEBUFFER_BINDING);
 				if (!binding) {
 					return 0;
 				}
@@ -185,46 +182,46 @@ engine_internal.gl_module = {
 			framebuffer_texture_2d: (tex_id) => {
 				let texture = this.textures[tex_id-1] || null;
 
-				gl.framebufferTexture2D(
-					gl.FRAMEBUFFER,
-					gl.COLOR_ATTACHMENT0, 
-					gl.TEXTURE_2D, texture, 0
+				this.context.framebufferTexture2D(
+					this.context.FRAMEBUFFER,
+					this.context.COLOR_ATTACHMENT0, 
+					this.context.TEXTURE_2D, texture, 0
 				);
 			},
 
 			framebuffer_renderbuffer: (rb_id) => {
 				let renderbuffer = this.renderbuffers[rb_id-1] || null;
 
-				gl.framebufferRenderbuffer(
-					gl.FRAMEBUFFER,
-					gl.DEPTH_ATTACHMENT, 
-					gl.RENDERBUFFER, renderbuffer
+				this.context.framebufferRenderbuffer(
+					this.context.FRAMEBUFFER,
+					this.context.DEPTH_ATTACHMENT, 
+					this.context.RENDERBUFFER, renderbuffer
 				);
 			},
 
 
 			// Renderbuffer stuff
 			create_renderbuffer: () => {
-				this.renderbuffers.push(gl.createRenderbuffer());
+				this.renderbuffers.push(this.context.createRenderbuffer());
 				return this.renderbuffers.length;
 			},
 
 			delete_renderbuffer: (rb_id) => {
 				let fb = this.renderbuffers[rb_id-1] || null;
 				if (fb) {
-					gl.deleteRenderbuffer(fb);
+					this.context.deleteRenderbuffer(fb);
 					this.renderbuffers[rb_id-1] = null;
 				}
 			},
 
 			bind_renderbuffer: (rb_id) => {
 				let fb = this.renderbuffers[rb_id-1] || null;
-				gl.bindRenderbuffer(gl.RENDERBUFFER, fb);
+				this.context.bindRenderbuffer(this.context.RENDERBUFFER, fb);
 			},
 
 			renderbuffer_depth_storage: (w, h) => {
-				gl.renderbufferStorage(
-					gl.RENDERBUFFER, gl.DEPTH_COMPONENT16,
+				this.context.renderbufferStorage(
+					this.context.RENDERBUFFER, this.context.DEPTH_COMPONENT16,
 					w, h
 				);
 			},
@@ -232,21 +229,21 @@ engine_internal.gl_module = {
 
 			// Shader stuff
 			create_shader_program: () => {
-				this.programs.push(gl.createProgram());
+				this.programs.push(this.context.createProgram());
 				return this.programs.length;
 			},
 
 			create_shader: (type, src_ptr, src_len) => {
 				let sh;
 				switch (type) {
-					case 0: sh = gl.createShader(gl.VERTEX_SHADER); break; 
-					case 1: sh = gl.createShader(gl.FRAGMENT_SHADER); break; 
+					case 0: sh = this.context.createShader(this.context.VERTEX_SHADER); break; 
+					case 1: sh = this.context.createShader(this.context.FRAGMENT_SHADER); break; 
 				}
 
-				gl.shaderSource(sh, rust_str_to_js(src_ptr, src_len));
-				gl.compileShader(sh);
+				this.context.shaderSource(sh, this.engine.wasm.rust_str_to_js(src_ptr, src_len));
+				this.context.compileShader(sh);
 
-				let info = gl.getShaderInfoLog(sh);
+				let info = this.context.getShaderInfoLog(sh);
 				if (info.length > 0) {
 					console.error(info.slice(0, -1));
 				}
@@ -257,8 +254,8 @@ engine_internal.gl_module = {
 
 			bind_attrib_location: (program_id, name_ptr, name_len, idx) => {
 				let program = this.programs[program_id-1] || null;
-				let name = rust_str_to_js(name_ptr, name_len);
-				gl.bindAttribLocation(program, idx, name);
+				let name = this.engine.wasm.rust_str_to_js(name_ptr, name_len);
+				this.context.bindAttribLocation(program, idx, name);
 			},
 
 			link_program: (program_id, vert_id, frag_id) => {
@@ -266,11 +263,11 @@ engine_internal.gl_module = {
 				let vert = this.shaders[vert_id-1] || null;
 				let frag = this.shaders[frag_id-1] || null;
 
-				gl.attachShader(program, vert);
-				gl.attachShader(program, frag);
-				gl.linkProgram(program);
+				this.context.attachShader(program, vert);
+				this.context.attachShader(program, frag);
+				this.context.linkProgram(program);
 
-				let info = gl.getProgramInfoLog(program);
+				let info = this.context.getProgramInfoLog(program);
 				if (info.length > 0) {
 					console.error(info.slice(0, -1));
 				}
@@ -278,86 +275,47 @@ engine_internal.gl_module = {
 
 			use_program: (program_id) => {
 				let program = this.programs[program_id-1] || null;
-				gl.useProgram(program);
+				this.context.useProgram(program);
 			},
 
-			stencil_func: (condition, reference, mask) => gl.stencilFunc(condition, reference, mask),
-			stencil_op: (stencil_fail, depth_fail, pass) => gl.stencilOp(stencil_fail, depth_fail, pass),
-			color_mask: (r,g,b,a) => gl.colorMask(r,g,b,a),
-			depth_mask: (enabled) => gl.depthMask(enabled),
-			stencil_mask: (bits) => gl.stencilMask(bits),
+			stencil_func: (condition, reference, mask) => this.context.stencilFunc(condition, reference, mask),
+			stencil_op: (stencil_fail, depth_fail, pass) => this.context.stencilOp(stencil_fail, depth_fail, pass),
+			color_mask: (r,g,b,a) => this.context.colorMask(r,g,b,a),
+			depth_mask: (enabled) => this.context.depthMask(enabled),
+			stencil_mask: (bits) => this.context.stencilMask(bits),
 
 			set_uniform_int_raw: (program_id, name_ptr, name_len, i) => {
 				let program = this.programs[program_id-1] || null;
-				let u_name = rust_str_to_js(name_ptr, name_len);
+				let u_name = this.engine.wasm.rust_str_to_js(name_ptr, name_len);
 
-				let loc = gl.getUniformLocation(program, u_name);
-				gl.uniform1i(loc, i);
+				let loc = this.context.getUniformLocation(program, u_name);
+				this.context.uniform1i(loc, i);
 			},
 
 			set_uniform_f32_raw: (program_id, name_ptr, name_len, f) => {
 				let program = this.programs[program_id-1] || null;
-				let u_name = rust_str_to_js(name_ptr, name_len);
+				let u_name = this.engine.wasm.rust_str_to_js(name_ptr, name_len);
 
-				let loc = gl.getUniformLocation(program, u_name);
-				gl.uniform1f(loc, f);
+				let loc = this.context.getUniformLocation(program, u_name);
+				this.context.uniform1f(loc, f);
 			},
 
 			set_uniform_vec4_raw: (program_id, name_ptr, name_len, x,y,z,w) => {
 				let program = this.programs[program_id-1] || null;
-				let u_name = rust_str_to_js(name_ptr, name_len);
+				let u_name = this.engine.wasm.rust_str_to_js(name_ptr, name_len);
 
-				let loc = gl.getUniformLocation(program, u_name);
-				gl.uniform4f(loc, x, y, z, w);
+				let loc = this.context.getUniformLocation(program, u_name);
+				this.context.uniform4f(loc, x, y, z, w);
 			},
 
 			set_uniform_mat4_raw: (program_id, name_ptr, name_len, mat) => {
 				let program = this.programs[program_id-1] || null;
-				let buf_raw = engine_internal.memory.buffer;
 
-				let mat_view = new Float32Array(buf_raw, mat, 16);
-				let u_name = rust_str_to_js(name_ptr, name_len);
+				let mat_view = this.engine.wasm.heap_memory_view_f32(mat, 16);
+				let u_name = this.engine.wasm.rust_str_to_js(name_ptr, name_len);
 
-				let loc = gl.getUniformLocation(program, u_name);
-				gl.uniformMatrix4fv(loc, false, mat_view);
-			},
-		};
-	},
-
-
-	exports: function(exps) {
-		return {
-			register_texture: (id, el) => {
-				if (this.named_textures.hasOwnProperty(id)) {
-					return;
-				}
-
-				switch (typeof el) {
-					case "undefined":
-						el = document.getElementById(id);
-						break;
-					case "string":
-						el = document.getElementById(el);
-						break;
-					case "object": break;
-					default:
-						el = null;
-				}
-
-				if (!el) {
-					throw `trying to register texture ${id} with invalid type`;	
-				}
-
-				let tex_id = this.load_named_texture(id, el);
-
-				// TODO: Make sure this makes sense
-				const has_dimensions = el instanceof HTMLImageElement
-					|| el instanceof HTMLCanvasElement
-					|| el instanceof Image;
-
-				if (has_dimensions) {
-					exps.internal_register_texture(tex_id, el.width, el.height);
-				}
+				let loc = this.context.getUniformLocation(program, u_name);
+				this.context.uniformMatrix4fv(loc, false, mat_view);
 			},
 		};
 	},

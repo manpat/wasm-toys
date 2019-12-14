@@ -3,7 +3,7 @@
 use common::*;
 
 use crate::get_engine_mut;
-use crate::string_arena::JSString;
+use crate::arena::JSString;
 use crate::input::*;
 
 // HACK - without this, this whole module will get dropped

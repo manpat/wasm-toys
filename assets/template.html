@@ -44,38 +44,20 @@
 	<body>
 		<canvas id="canvas"></canvas>
 
-		<script>
+		<script type="module">
 			"use strict";
+
+			// dummy imports to prefetch main.js dependencies
+			import {input_module} from "/wasm-toys/input.js";
+			import {gl_module} from "/wasm-toys/gl.js";
+
+			import {WasmModule} from "/wasm-toys/common.js";
+			import {initialise_engine} from "/wasm-toys/main.js";
 
 			let engine = null;
 
-			function start_loading_script(s) {
-				return new Promise(
-					(resolve, reject) => {
-						let script = document.createElement('script');
-						script.onload = resolve;
-						script.onerror = reject;
-						script.async = true;
-						script.src = s;
-						document.body.appendChild(script);
-					}
-				);
-			}
-
 			async function init() {
-				let engine_scripts = [
-					"/wasm-toys/main.js",
-					"/wasm-toys/input.js",
-					"/wasm-toys/gl.js"
-				];
-
-				let engine_promise = fetch("/wasm-toys/[[binary_name]]-[[build_type]].wasm")
-					.then(x => x.arrayBuffer())
-					.then(x => WebAssembly.compile(x));
-
-				let script_promises = engine_scripts.map(start_loading_script);
-				await Promise.all(script_promises);
-
+				let engine_promise = WasmModule.compile("/wasm-toys/[[binary_name]]-[[build_type]].wasm");
 				let canvas = document.getElementById("canvas");
 				engine = await initialise_engine(await engine_promise, canvas);
 			}

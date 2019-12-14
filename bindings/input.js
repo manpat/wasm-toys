@@ -1,18 +1,17 @@
 "use strict";
 
-var engine_internal = engine_internal || {};
-
-engine_internal.input_module = {
-	init: function (canvas) {
-		this.canvas = canvas;
+export let input_module = {
+	init: function (engine) {
+		this.engine = engine;
+		this.canvas = engine.canvas;
 
 		this.has_pointer_lock = 'pointerLockElement' in document ||
 			'mozPointerLockElement' in document ||
 			'webkitPointerLockElement' in document;
 		
-		this.request_pointer_lock = canvas.requestPointerLock
-			|| canvas.mozRequestPointerLock
-			|| canvas.webkitRequestPointerLock
+		this.request_pointer_lock = engine.canvas.requestPointerLock
+			|| engine.canvas.mozRequestPointerLock
+			|| engine.canvas.webkitRequestPointerLock
 			|| (() => console.error("Pointer lock not supported"));
 
 		this.exit_pointer_lock = document.exitPointerLock
@@ -20,13 +19,13 @@ engine_internal.input_module = {
 			|| document.webkitExitPointerLock
 			|| (() => console.error("Pointer lock not supported"));
 
-		this.request_pointer_lock = this.request_pointer_lock.bind(canvas);
+		this.request_pointer_lock = this.request_pointer_lock.bind(engine.canvas);
 		this.exit_pointer_lock = this.exit_pointer_lock.bind(document);
 
 		if (this.has_pointer_lock) {
 			document.addEventListener('pointerlockchange',
 				(e) => this.on_pointer_lock_change(e), false);
-			canvas.addEventListener('pointerlockerror',
+			engine.canvas.addEventListener('pointerlockerror',
 				(e) => this.on_pointer_lock_error(e), false);
 		}
 	},
@@ -59,17 +58,17 @@ engine_internal.input_module = {
 
 
 	// on_focus_gain: function(e) {
-	// 	engine_internal.exports.internal_handle_focus_gain();
+	// 	this.engine.exports.internal_handle_focus_gain();
 	// },
 
 	on_focus_loss: function(e) {
-		engine_internal.exports.internal_handle_focus_loss();
+		this.engine.exports.internal_handle_focus_loss();
 	},
 
 
 	on_key_down: function(e) {
-		let name = js_str_to_rust(e.code);
-		let consume = engine_internal.exports.internal_handle_key_down(name);
+		let name = this.engine.wasm.js_str_to_rust(e.code);
+		let consume = this.engine.exports.internal_handle_key_down(name);
 		if (consume) {
 			e.preventDefault();
 		}
@@ -77,8 +76,8 @@ engine_internal.input_module = {
 
 
 	on_key_up: function(e) {
-		let name = js_str_to_rust(e.code);
-		let consume = engine_internal.exports.internal_handle_key_up(name);
+		let name = this.engine.wasm.js_str_to_rust(e.code);
+		let consume = this.engine.exports.internal_handle_key_up(name);
 		if (consume) {
 			e.preventDefault();
 		}
@@ -89,7 +88,7 @@ engine_internal.input_module = {
 		let button = e.button;
 		let x = e.clientX;
 		let y = e.clientY;
-		let consume = engine_internal.exports.internal_handle_mouse_down(button, x, y);
+		let consume = this.engine.exports.internal_handle_mouse_down(button, x, y);
 		if (consume) {
 			e.preventDefault();
 		}
@@ -100,7 +99,7 @@ engine_internal.input_module = {
 		let button = e.button;
 		let x = e.clientX;
 		let y = e.clientY;
-		let consume = engine_internal.exports.internal_handle_mouse_up(button, x, y);
+		let consume = this.engine.exports.internal_handle_mouse_up(button, x, y);
 		if (consume) {
 			e.preventDefault();
 		}
@@ -112,7 +111,7 @@ engine_internal.input_module = {
 		let y = e.clientY;
 		let dx = e.movementX;
 		let dy = e.movementY;
-		let consume = engine_internal.exports.internal_handle_mouse_move(x, y, dx, dy);
+		let consume = this.engine.exports.internal_handle_mouse_move(x, y, dx, dy);
 		if (consume) {
 			e.preventDefault();
 		}
@@ -125,7 +124,7 @@ engine_internal.input_module = {
 		for (let touch of e.changedTouches) {
 			let x = touch.clientX;
 			let y = touch.clientY;
-			consume |= engine_internal.exports.internal_handle_touch_down(touch.identifier, x, y);
+			consume |= this.engine.exports.internal_handle_touch_down(touch.identifier, x, y);
 		}
 
 		if (consume) {
@@ -140,7 +139,7 @@ engine_internal.input_module = {
 		for (let touch of e.changedTouches) {
 			let x = touch.clientX;
 			let y = touch.clientY;
-			consume |= engine_internal.exports.internal_handle_touch_up(touch.identifier, x, y);
+			consume |= this.engine.exports.internal_handle_touch_up(touch.identifier, x, y);
 		}
 
 		if (consume) {
@@ -155,7 +154,7 @@ engine_internal.input_module = {
 		for (let touch of e.changedTouches) {
 			let x = touch.clientX;
 			let y = touch.clientY;
-			consume |= engine_internal.exports.internal_handle_touch_move(touch.identifier, x, y);
+			consume |= this.engine.exports.internal_handle_touch_move(touch.identifier, x, y);
 		}
 
 		if (consume) {
@@ -171,7 +170,7 @@ engine_internal.input_module = {
 
 		let enabled = (lock_element === this.canvas);
 
-		engine_internal.exports.internal_notify_pointer_lock_change(enabled);
+		this.engine.exports.internal_notify_pointer_lock_change(enabled);
 	},
 
 	on_pointer_lock_error: function(e) {
@@ -179,7 +178,7 @@ engine_internal.input_module = {
 	},
 
 
-	imports: function() {
+	imports: function(engine) {
 		return {
 			init_input_listeners: (passive) => this.init_input_listeners(passive),
 
@@ -187,12 +186,4 @@ engine_internal.input_module = {
 			exit_pointer_lock: () => this.exit_pointer_lock(),
 		};
 	},
-
-	exports: function(exps) {
-		// TODO: Think about naming
-		return {
-			enable_pointer_lock: exps.engine_enable_pointer_lock,
-		};
-	},
 };
-

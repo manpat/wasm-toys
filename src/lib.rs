@@ -10,7 +10,7 @@ pub mod imports;
 
 #[macro_use]
 pub mod io;
-pub mod string_arena;
+pub mod arena;
 
 pub mod exports;
 
