@@ -10,6 +10,7 @@ pub struct Engine {
 
 	pub input_context: InputContext,
 	pub gesture_tracker: GestureTracker,
+	// TODO: worker manager
 
 	pub viewport: Vec2i,
 	pub time_ticks: Ticks,
@@ -78,5 +79,7 @@ pub trait EngineClient {
 
 	fn init(&mut self) {}
 	fn update(&mut self, _: UpdateContext) {}
+
+	// fn on_worker_message(&mut self, data: &[u8]) {}
 }
 

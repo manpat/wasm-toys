@@ -1,15 +1,5 @@
 "use strict";
 
-export const merge_objects = Object.assign || function(t) {
-    for (var s, i = 1, n = arguments.length; i < n; i++) {
-        s = arguments[i];
-        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
-            t[p] = s[p];
-    }
-    return t;
-};
-
-
 function poormans_text_encode(str) {
 	// Convert to monked utf-8 string
 	str = unescape(encodeURIComponent(str));
@@ -43,16 +33,17 @@ if (TextDecoder && TextEncoder) {
 }
 
 
-export class WasmModule {
-	constructor(mod) {
+class WasmModule {
+	constructor(mod, raw=null) {
 		this.module = mod;
+		this.raw_data = raw;
 	}
 
 	static async compile(url) {
 		let fetch_res = await fetch(url);
 		let mod_data = await fetch_res.arrayBuffer();
 		let mod = await WebAssembly.compile(mod_data);
-		return new WasmModule(mod);
+		return new WasmModule(mod, mod_data);
 	}
 
 	async instantiate(imports) {
@@ -70,8 +61,8 @@ export class WasmModule {
 		return instance;
 	}
 
-	static initialise_imports(box_inst, imports) {
-		let io_imports = {
+	static initialise_imports(box_inst, extra_imports) {
+		let imports = {
 			console_log_raw: (ptr, len) => {
 				console.log(box_inst.inst.rust_str_to_js(ptr, len));
 			},
@@ -81,23 +72,21 @@ export class WasmModule {
 			console_error_raw: (ptr, len) => {
 				console.error(box_inst.inst.rust_str_to_js(ptr, len));
 			},
+
+			math_random: Math.random,
 		};
 
-		let math_imports = {
-			math_random: Math.random, 
-		};
+		for (let [k, v] of Object.entries(extra_imports)) {
+			imports[k] = v;
+		}
 
-		return merge_objects({},
-			imports,
-			io_imports,
-			math_imports,
-		);
+		return imports;
 	}
 }
 
 
 
-export class WasmInstance {
+class WasmInstance {
 	constructor(inst) {
 		this.instance = inst;
 		this.memory = inst.exports.memory;
@@ -161,3 +150,4 @@ export class WasmInstance {
 		return ptr;
 	}
 }
+

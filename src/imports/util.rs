@@ -8,4 +8,6 @@ extern {
 	pub fn canvas_height() -> i32;
 
 	pub fn math_random() -> f32;
+
+	pub fn fork(num_threads: usize);
 }

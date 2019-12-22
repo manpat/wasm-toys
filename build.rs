@@ -9,6 +9,7 @@ const MAPPING_HEADER: &'static str =
 r##"
 /wasm-toys/common.js => bindings/common.js [text/javascript]
 /wasm-toys/main.js => bindings/main.js [text/javascript]
+/wasm-toys/worker.js => bindings/worker.js [text/javascript]
 /wasm-toys/input.js => bindings/input.js [text/javascript]
 /wasm-toys/gl.js => bindings/gl.js [text/javascript]
 "##;

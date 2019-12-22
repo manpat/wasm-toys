@@ -1,6 +1,7 @@
 pub mod gl;
 pub mod util;
 pub mod input;
+pub mod worker;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug)]

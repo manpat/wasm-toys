@@ -44,6 +44,7 @@
 	<body>
 		<canvas id="canvas"></canvas>
 
+		<script src="/wasm-toys/common.js"></script>
 		<script type="module">
 			"use strict";
 
@@ -51,7 +52,6 @@
 			import {input_module} from "/wasm-toys/input.js";
 			import {gl_module} from "/wasm-toys/gl.js";
 
-			import {WasmModule} from "/wasm-toys/common.js";
 			import {initialise_engine} from "/wasm-toys/main.js";
 
 			let engine = null;

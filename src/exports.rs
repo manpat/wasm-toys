@@ -3,7 +3,7 @@
 use common::*;
 
 use crate::get_engine_mut;
-use crate::arena::JSString;
+use crate::arena::{JSString, JSBuffer};
 use crate::input::*;
 
 // HACK - without this, this whole module will get dropped
@@ -21,6 +21,19 @@ pub fn internal_update_viewport(w: i32, h: i32) {
 	get_engine_mut().viewport = Vec2i::new(w,h);
 }
 
+// worker
+
+#[no_mangle]
+pub fn internal_handle_worker_ready(id: usize) {
+	// get_engine_mut()
+	console_log!("rs worker ready! {}", id);
+}
+
+#[no_mangle]
+pub fn internal_handle_worker_message(id: usize, _buf: JSBuffer) {
+	// get_engine_mut()
+	console_log!("rs worker message from {}", id);
+}
 
 
 // allocation
