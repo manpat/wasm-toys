@@ -39,20 +39,13 @@ impl App {
 			shader,
 			mesh: DynamicMesh::new(),
 
-			worms: Vec::new(),
+			worms: vec![Worm::new(Vec2::zero())],
 		}
 	}
 }
 
 
 impl EngineClient for App {
-	fn init(&mut self) {
-		for _ in 0..20 {
-			let worm_pos = Vec2::new(rand(), rand()) * 2.0 - 1.0;
-			self.worms.push(Worm::new(worm_pos * WORLD_SCALE));
-		}
-	}
-
 	fn update(&mut self, ctx: engine::UpdateContext) {
 		unsafe {
 			let (r,g,b,_) = Color::rgb8(199, 145, 70).to_tuple();
