@@ -44,12 +44,18 @@ pub struct Camera {
 
 	near: f32,
 	far: f32,
+	
+	aspect: f32,
+	viewport: Vec2i,
 
 	projection_matrix: MemoisedMat4,
 	view_matrix: MemoisedMat4,
+
+	inv_projection_matrix: MemoisedMat4,
+	inv_view_matrix: MemoisedMat4,
+
 	proj_view_matrix: MemoisedMat4,
-	aspect: f32,
-	viewport: Vec2i,
+	inv_proj_view_matrix: MemoisedMat4,
 }
 
 
@@ -62,11 +68,16 @@ impl Camera {
 
 			near: 0.1, far: 100.0,
 
+			aspect: 1.0,
+			viewport: Vec2i::splat(1),
+
 			projection_matrix: MemoisedMat4::new(),
 			view_matrix: MemoisedMat4::new(),
 			proj_view_matrix: MemoisedMat4::new(),
-			aspect: 1.0,
-			viewport: Vec2i::splat(1),
+			
+			inv_projection_matrix: MemoisedMat4::new(),
+			inv_view_matrix: MemoisedMat4::new(),
+			inv_proj_view_matrix: MemoisedMat4::new(),
 		}
 	}
 
@@ -108,6 +119,25 @@ impl Camera {
 	pub fn projection_view(&self) -> Mat4 {
 		self.proj_view_matrix.get_or_update(|| {
 			 self.projection_matrix() * self.view_matrix()
+		})
+	}
+
+
+	pub fn inverse_projection_matrix(&self) -> Mat4 {
+		self.inv_projection_matrix.get_or_update(|| {
+			self.projection_matrix().inverse()
+		})
+	}
+
+	pub fn inverse_view_matrix(&self) -> Mat4 {
+		self.inv_view_matrix.get_or_update(|| {
+			self.view_matrix().inverse()
+		})
+	}
+
+	pub fn inverse_projection_view(&self) -> Mat4 {
+		self.inv_proj_view_matrix.get_or_update(|| {
+			 self.projection_view().inverse()
 		})
 	}
 
@@ -155,5 +185,10 @@ impl Camera {
 	}
 
 
+
+	pub fn screen_to_world(&self, screen: Vec3) -> Vec3 {
+		let v = self.inverse_projection_view() * screen.extend(1.0);
+		v.to_vec3() / v.w
+	}
 }
 
