@@ -74,7 +74,8 @@ impl EngineClient for App {
 
 		self.mesh.clear();
 
-		let screen_radius = WORLD_SCALE.hypot(WORLD_SCALE * self.camera.aspect());
+		let largest_aspect = self.camera.aspect().max(1.0 / self.camera.aspect());
+		let screen_radius = WORLD_SCALE.hypot(WORLD_SCALE * largest_aspect) + 1.0;
 
 		for worm in self.worms.iter_mut() {
 			worm.update();
