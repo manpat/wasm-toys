@@ -18,7 +18,7 @@ impl Framebuffer {
 	}
 
 	#[must_use]
-	pub fn bind(&self) -> FramebufferBindGuard {
+	pub fn bind(&self) -> FramebufferBindGuard<'_> {
 		FramebufferBindGuard::new(self.gl_handle, self.size())
 	}
 

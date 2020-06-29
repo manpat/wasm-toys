@@ -98,7 +98,7 @@ impl ops::Drop for JSString {
 }
 
 impl fmt::Display for JSString {
-	fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> Result<(), fmt::Error> {
 		self.as_str().fmt(f)
 	}
 }

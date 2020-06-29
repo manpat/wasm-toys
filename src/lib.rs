@@ -1,8 +1,7 @@
 #![feature(panic_info_message, box_syntax, ptr_offset_from)]
 #![feature(clamp)]
 #![feature(nll)]
-
-pub extern crate common;
+#![deny(rust_2018_idioms, future_incompatible)]
 
 pub mod prelude;
 
@@ -17,7 +16,6 @@ pub mod exports;
 pub mod engine;
 pub mod input;
 pub mod graphics;
-pub mod scene;
 
 pub use engine::{EngineClient, UpdateContext, Ticks, EngineResult};
 pub const DT: f32 = 1.0/60.0;

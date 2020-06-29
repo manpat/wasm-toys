@@ -48,6 +48,7 @@ impl Perlin {
 		perlin
 	}
 
+	#[allow(dead_code)]
 	pub fn sample(&self, p: Vec3) -> f32 {
 		let size_f = self.size as f32;
 

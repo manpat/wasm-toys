@@ -1,6 +1,4 @@
 use engine::prelude::*;
-use engine::scene;
-
 use crate::player_controller::PlayerController;
 
 
@@ -26,7 +24,7 @@ pub struct InteractionTarget {
 }
 
 
-pub fn interaction_targets_in_range(scene: scene::SceneRef, ply: &PlayerController) -> Vec<InteractionTarget> {
+pub fn interaction_targets_in_range(scene: toy::SceneRef, ply: &PlayerController) -> Vec<InteractionTarget> {
 	let player_pos = ply.pos.to_xz();
 	let player_fwd = ply.rot.forward().to_xz().normalize();
 

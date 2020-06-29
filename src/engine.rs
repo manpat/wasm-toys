@@ -77,6 +77,6 @@ pub trait EngineClient {
 	fn hold_threshold(&self) -> Option<Ticks> { None } // Holding disabled by default
 
 	fn init(&mut self) {}
-	fn update(&mut self, _: UpdateContext) {}
+	fn update(&mut self, _: UpdateContext<'_>) {}
 }
 

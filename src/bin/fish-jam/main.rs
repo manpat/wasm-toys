@@ -3,7 +3,6 @@
 
 extern crate wasm_toys as engine;
 use engine::prelude::*;
-use engine::scene;
 
 use vertex::BasicVertex;
 
@@ -37,7 +36,7 @@ enum PlayState {
 struct App {
 	camera: Camera,
 
-	file: scene::ToyFile,
+	file: toy::Project,
 
 	it_shader: Shader,
 	interaction_target_mesh: BasicDynamicMesh<SceneVertex>,
@@ -75,7 +74,7 @@ impl App {
 			BasicVertex(Vec3::new( 1.0, -1.0, 0.0)),
 		]);
 
-		let file = scene::load_toy_file(include_bytes!("main.toy")).unwrap();
+		let file = toy::load(include_bytes!("main.toy")).unwrap();
 		let scene_view = SceneView::new(&file);
 
 		App {

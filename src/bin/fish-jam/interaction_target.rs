@@ -1,6 +1,4 @@
 use engine::prelude::*;
-use engine::scene;
-
 use crate::scene_view::*;
 use crate::player_controller::PlayerController;
 
@@ -27,7 +25,7 @@ pub struct InteractionTarget {
 }
 
 
-pub fn interaction_targets_in_scene<'s>(file: &'s scene::ToyFile, scene_name: &str) -> impl Iterator<Item=InteractionTarget> + 's {
+pub fn interaction_targets_in_scene<'s>(file: &'s toy::Project, scene_name: &str) -> impl Iterator<Item=InteractionTarget> + 's {
 	entities_in_scene(file, scene_name)
 		.filter(|e| e.name.starts_with("IT_"))
 		.map(|e| InteractionTarget {
@@ -38,7 +36,7 @@ pub fn interaction_targets_in_scene<'s>(file: &'s scene::ToyFile, scene_name: &s
 }
 
 
-pub fn interaction_targets_in_range(file: &scene::ToyFile, scene_name: &str, ply: &PlayerController) -> Vec<InteractionTarget> {
+pub fn interaction_targets_in_range(file: &toy::Project, scene_name: &str, ply: &PlayerController) -> Vec<InteractionTarget> {
 	let player_pos = ply.pos.to_xz();
 	let player_fwd = ply.rot.forward().to_xz();
 

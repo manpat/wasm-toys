@@ -1,8 +1,6 @@
 extern crate wasm_toys as engine;
 use engine::prelude::*;
 
-use engine::scene;
-
 pub type Mesh = DynamicMesh<vertex::ColorVertex>;
 
 
@@ -112,7 +110,7 @@ impl engine::EngineClient for Bubble {
 
 
 fn init_scene() -> EngineResult<(Mesh, Mesh)> {
-	let file = scene::load_toy_file(include_bytes!("bubble.toy"))?;
+	let file = toy::load(include_bytes!("bubble.toy"))?;
 
 	let mut scene_mesh = Mesh::new();
 	let mut portal_mesh = Mesh::new();
@@ -165,20 +163,20 @@ fn init_scene() -> EngineResult<(Mesh, Mesh)> {
 
 
 
-fn find_entity<'s>(file: &'s scene::ToyFile, name: &str) -> EngineResult<&'s scene::EntityData> {
+fn find_entity<'s>(file: &'s toy::Project, name: &str) -> EngineResult<&'s toy::EntityData> {
 	file.entities.iter()
 		.find(|e| e.name == name)
 		.ok_or_else(|| format_err!("Couldn't find entity '{}' in toy file", name))
 }
 
-fn find_scene<'s>(file: &'s scene::ToyFile, name: &str) -> EngineResult<&'s scene::SceneData> {
+fn find_scene<'s>(file: &'s toy::Project, name: &str) -> EngineResult<&'s toy::SceneData> {
 	file.scenes.iter()
 		.find(|e| e.name == name)
 		.ok_or_else(|| format_err!("Couldn't find scene '{}' in toy file", name))
 }
 
 
-fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s scene::ToyFile, entity: &'s scene::EntityData) -> EngineResult<()> {
+fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s toy::Project, entity: &'s toy::EntityData) -> EngineResult<()> {
 	let mesh_id = entity.mesh_id as usize;
 
 	ensure!(mesh_id != 0, "Entity '{}' has no mesh", entity.name);
@@ -200,12 +198,12 @@ fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s scene::ToyFile, entity: &
 		.collect();
 
 	match mesh_data.indices {
-		scene::MeshIndices::U8(ref v) => {
+		toy::MeshIndices::U8(ref v) => {
 			let indices = v.iter().map(|&i| i as u16);
 			mesh.add_geometry(&verts, indices);
 		},
 
-		scene::MeshIndices::U16(ref v) => {
+		toy::MeshIndices::U16(ref v) => {
 			mesh.add_geometry(&verts, v);
 		}
 	}
