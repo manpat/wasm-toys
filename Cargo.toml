@@ -7,5 +7,6 @@ edition = "2018"
 [dependencies]
 common = { git = "https://github.com/manpat/common-rs.git" }
 # common = { path = "../common-rs" }
-toy = { path = "../toy-rs" }
+toy = { git = "https://github.com/manpat/toy-rs.git" }
+# toy = { path = "../toy-rs" }
 failure = "0.1.1"
