@@ -115,7 +115,8 @@ fn init_scene() -> EngineResult<(Mesh, Mesh)> {
 	let mut scene_mesh = Mesh::new();
 	let mut portal_mesh = Mesh::new();
 
-	let scene = find_scene(&file, "seaside")?;
+	let scene = file.find_scene("seaside")
+		.ok_or_else(|| format_err!("Couldn't find scene 'seaside' in toy file"))?;
 
 	let entities = scene.entities.iter()
 		.map(|&id| &file.entities[id as usize - 1]);
@@ -124,8 +125,9 @@ fn init_scene() -> EngineResult<(Mesh, Mesh)> {
 		bake_entity_to_mesh(&mut scene_mesh, &file, e)?;
 	}
 
-	let portal_ent = find_entity(&file, "portal")?;
-	bake_entity_to_mesh(&mut portal_mesh, &file, portal_ent)?;
+	let portal_ent = file.find_entity("portal")
+		.ok_or_else(|| format_err!("Couldn't find entity 'portal' in toy file"))?;
+	bake_entity_to_mesh(&mut portal_mesh, &file, &portal_ent)?;
 
 	scene_mesh.apply(|vert| {
 		let rgb = vert.color;
@@ -162,20 +164,6 @@ fn init_scene() -> EngineResult<(Mesh, Mesh)> {
 }
 
 
-
-fn find_entity<'s>(file: &'s toy::Project, name: &str) -> EngineResult<&'s toy::EntityData> {
-	file.entities.iter()
-		.find(|e| e.name == name)
-		.ok_or_else(|| format_err!("Couldn't find entity '{}' in toy file", name))
-}
-
-fn find_scene<'s>(file: &'s toy::Project, name: &str) -> EngineResult<&'s toy::SceneData> {
-	file.scenes.iter()
-		.find(|e| e.name == name)
-		.ok_or_else(|| format_err!("Couldn't find scene '{}' in toy file", name))
-}
-
-
 fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s toy::Project, entity: &'s toy::EntityData) -> EngineResult<()> {
 	let mesh_id = entity.mesh_id as usize;
 
@@ -186,9 +174,7 @@ fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s toy::Project, entity: &'s
 
 	ensure!(mesh_data.color_data.len() > 0, "Entity '{}'s mesh has no color data", entity.name);
 
-	let transform = Mat4::translate(entity.position)
-		* entity.rotation.to_mat4()
-		* Mat4::scale(entity.scale);
+	let transform = entity.transform();
 
 	let verts: Vec<_> = mesh_data.positions.iter()
 		.zip(mesh_data.color_data[0].data.iter())
@@ -197,16 +183,7 @@ fn bake_entity_to_mesh<'s>(mesh: &mut Mesh, scene: &'s toy::Project, entity: &'s
 		})
 		.collect();
 
-	match mesh_data.indices {
-		toy::MeshIndices::U8(ref v) => {
-			let indices = v.iter().map(|&i| i as u16);
-			mesh.add_geometry(&verts, indices);
-		},
-
-		toy::MeshIndices::U16(ref v) => {
-			mesh.add_geometry(&verts, v);
-		}
-	}
+	mesh.add_geometry(&verts, &mesh_data.indices);
 
 	Ok(())
 }

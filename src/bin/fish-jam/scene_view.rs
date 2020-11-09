@@ -237,16 +237,8 @@ pub fn bake_entity_with_new_origin<'s>(mesh: &mut DynamicMesh<SceneVertex>, scen
 		})
 		.collect();
 
-	match mesh_data.indices {
-		toy::MeshIndices::U8(ref v) => {
-			let indices = v.iter().map(|&i| i as u16);
-			mesh.add_geometry(&verts, indices);
-		},
 
-		toy::MeshIndices::U16(ref v) => {
-			mesh.add_geometry(&verts, v);
-		}
-	}
+	mesh.add_geometry(&verts, &mesh_data.indices);
 
 	Ok(())
 }

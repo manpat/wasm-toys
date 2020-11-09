@@ -252,16 +252,7 @@ fn bake_mesh_with_transform(mesh: &mut SceneMesh, mesh_data: &toy::MeshData, col
 		})
 		.collect();
 
-	match mesh_data.indices {
-		toy::MeshIndices::U8(ref v) => {
-			let indices = v.iter().map(|&i| i as u16);
-			mesh.add_geometry(&verts, indices);
-		},
-
-		toy::MeshIndices::U16(ref v) => {
-			mesh.add_geometry(&verts, v);
-		}
-	}
+	mesh.add_geometry(&verts, &mesh_data.indices);
 }
 
 
