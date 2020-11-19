@@ -10,3 +10,6 @@ common = { git = "https://github.com/manpat/common-rs.git" }
 toy = { git = "https://github.com/manpat/toy-rs.git" }
 # toy = { path = "../toy-rs" }
 failure = "0.1.1"
+
+[profile.release]
+lto = true

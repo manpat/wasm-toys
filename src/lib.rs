@@ -1,7 +1,8 @@
-#![feature(panic_info_message, box_syntax, ptr_offset_from)]
+#![feature(panic_info_message, box_syntax)]
 #![feature(clamp)]
 #![feature(nll)]
 #![deny(rust_2018_idioms, future_incompatible)]
+#![allow(unused_parens)]
 
 pub mod prelude;
 
