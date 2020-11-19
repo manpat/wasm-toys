@@ -1,6 +1,6 @@
 use std::env;
-use std::fs::File;
-use std::io::Write;
+use std::fs::{self, File};
+use std::io::{self, Write};
 use std::path::Path;
 
 const INDEX_HTML_TEMPLATE: &'static str = include_str!("assets/template.html");
@@ -19,26 +19,36 @@ r##"/wasm-toys/[[binary_name]] => target/html/[[binary_name]].html
 
 "##;
 
-fn main() {
+fn read_bin_dir() -> io::Result<Option<fs::ReadDir>> {
+	match fs::read_dir("src/bin") {
+		Ok(dir) => Ok(Some(dir)),
+		Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(None),
+		Err(err) => Err(err),
+	}
+}
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
 	let profile = env::var("PROFILE").unwrap();
 
 	let html_target_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
 	let html_target_dir = Path::new(&html_target_dir).join("target/html");
 	std::fs::create_dir_all(&html_target_dir).unwrap();
 
-	let bin_dir = Path::new("src/bin");
 	let mut binaries = Vec::new();
 
-	for path in bin_dir.read_dir().expect(&format!("Couldn't read {:?}", bin_dir)) {
-		use std::ffi::OsStr;
+	if let Some(bin_dir) = read_bin_dir()? {
+		for entry in bin_dir {
+			use std::ffi::OsStr;
 
-		if let Ok(path) = path {
-			let path = path.path();
+			let path = entry?.path();
 
 			if path.extension() != Some(OsStr::new("rs"))
-				&& !path.is_dir()  { continue }
+				&& !path.is_dir()
+			{
+				continue
+			}
 
-			if let Some(Some(path)) = path.file_stem().map(OsStr::to_str) {
+			if let Some(path) = path.file_stem().and_then(OsStr::to_str) {
 				binaries.push(path.to_owned());
 			}
 		}
@@ -58,10 +68,10 @@ fn main() {
 		let mapping = mapping_template.replace("[[binary_name]]", binary);
 		
 		let path = html_target_dir.join(format!("{}.html", binary));
-		let mut html_file = File::create(&path).unwrap();
+		let mut html_file = File::create(&path)?;
 
-		html_file.write_all(index_html.as_bytes()).unwrap();
-		mappings_file.write_all(mapping.as_bytes()).unwrap();
+		html_file.write_all(index_html.as_bytes())?;
+		mappings_file.write_all(mapping.as_bytes())?;
 	}
 
 	if profile == "debug" {
@@ -69,4 +79,5 @@ fn main() {
 	}
 
 	// println!("cargo:rustc-cfg=dom_console");
+	Ok(())
 }
