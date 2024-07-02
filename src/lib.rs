@@ -1,4 +1,3 @@
-#![feature(panic_info_message)]
 #![deny(rust_2018_idioms, future_incompatible)]
 #![allow(unused_parens)]
 
@@ -30,13 +29,7 @@ pub fn init_engine<F: FnOnce() -> C, C: EngineClient + 'static>(client: F) {
 			console_error!("panic at {}:{}!", loc.file(), loc.line());
 		} 
 
-		if let Some(msg) = panic_info.message() {
-			console_error!("{}", msg);
-		}
-
-		if let Some(msg) = panic_info.payload().downcast_ref::<&str>() {
-			console_error!("{}", msg);
-		}
+		console_error!("{}", panic_info);
 	}));
 
 	exports::force_linkage();
