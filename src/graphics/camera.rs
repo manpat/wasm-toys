@@ -18,7 +18,7 @@ struct MemoisedMat4 {
 impl MemoisedMat4 {
 	fn new() -> Self {
 		MemoisedMat4 {
-			mat: Mat4::ident().into(),
+			mat: Mat4::identity().into(),
 			dirty: Cell::new(true),
 		}
 	}
@@ -63,7 +63,7 @@ impl Camera {
 	pub fn new() -> Self {
 		Camera {
 			position: Vec3::zero(),
-			orientation: Quat::ident(),
+			orientation: Quat::identity(),
 			projection: Projection::Perspective{ fovy: PI/3.0 },
 
 			near: 0.1, far: 100.0,

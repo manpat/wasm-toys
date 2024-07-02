@@ -1,6 +1,4 @@
-#![feature(panic_info_message, box_syntax)]
-#![feature(clamp)]
-#![feature(nll)]
+#![feature(panic_info_message)]
 #![deny(rust_2018_idioms, future_incompatible)]
 #![allow(unused_parens)]
 
@@ -27,7 +25,7 @@ use std::cell::{RefCell, Ref, RefMut};
 static mut ENGINE: Option<RefCell<engine::Engine>> = None;
 
 pub fn init_engine<F: FnOnce() -> C, C: EngineClient + 'static>(client: F) {
-	std::panic::set_hook(box |panic_info| {
+	std::panic::set_hook(Box::new(|panic_info| {
 		if let Some(loc) = panic_info.location() {
 			console_error!("panic at {}:{}!", loc.file(), loc.line());
 		} 
@@ -39,7 +37,7 @@ pub fn init_engine<F: FnOnce() -> C, C: EngineClient + 'static>(client: F) {
 		if let Some(msg) = panic_info.payload().downcast_ref::<&str>() {
 			console_error!("{}", msg);
 		}
-	});
+	}));
 
 	exports::force_linkage();
 

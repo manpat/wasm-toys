@@ -31,7 +31,7 @@ impl Engine {
 			let hold_threshold = client.hold_threshold().unwrap_or(std::u32::MAX);
 
 			Engine {
-				client: box client,
+				client: Box::new(client),
 				input_context,
 				gesture_tracker: GestureTracker::new(drag_threshold, hold_threshold),
 
