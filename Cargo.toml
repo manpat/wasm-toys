@@ -2,13 +2,11 @@
 name = "wasm-toys"
 version = "0.1.0"
 authors = ["Patrick Monaghan <0x5f.manpat@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 [dependencies]
-common = { git = "https://github.com/manpat/common-rs.git" }
-# common = { path = "../common-rs" }
+common = { git = "https://github.com/manpat/common-rs.git", branch = "cruft-resurrection" }
 toy = { git = "https://github.com/manpat/toy-rs.git" }
-# toy = { path = "../toy-rs" }
 failure = "0.1.1"
 
 [profile.release]
