@@ -57,30 +57,30 @@ impl Perlin {
 		let cell = vec3i_map!(cell_f, element as i32);
 		let uvw = vec3_map!(cell_f, element.fract());
 
-		let a = uvw.x.ease_linear(
+		let a = uvw.x.lerp(
 			self.sample_raw(cell + Vec3i::new(0, 0, 0)),
 			self.sample_raw(cell + Vec3i::new(1, 0, 0))
 		);
 
-		let b = uvw.x.ease_linear(
+		let b = uvw.x.lerp(
 			self.sample_raw(cell + Vec3i::new(0, 1, 0)),
 			self.sample_raw(cell + Vec3i::new(1, 1, 0))
 		);
 
-		let c = uvw.x.ease_linear(
+		let c = uvw.x.lerp(
 			self.sample_raw(cell + Vec3i::new(0, 0, 1)),
 			self.sample_raw(cell + Vec3i::new(1, 0, 1))
 		);
 
-		let d = uvw.x.ease_linear(
+		let d = uvw.x.lerp(
 			self.sample_raw(cell + Vec3i::new(0, 1, 1)),
 			self.sample_raw(cell + Vec3i::new(1, 1, 1))
 		);
 
-		let ab = uvw.y.ease_linear(a, b);
-		let cd = uvw.y.ease_linear(c, d);
+		let ab = uvw.y.lerp(a, b);
+		let cd = uvw.y.lerp(c, d);
 
-		uvw.z.ease_linear(ab, cd)
+		uvw.z.lerp(ab, cd)
 	}
 
 	pub fn gradient(&self, p: Vec3) -> Vec3 {
@@ -91,30 +91,30 @@ impl Perlin {
 		let cell = vec3i_map!(cell_f, element as i32);
 		let uvw = vec3_map!(cell_f, element.fract());
 
-		let a = uvw.x.ease_linear(
+		let a = uvw.x.lerp(
 			self.sample_gradient_raw(cell + Vec3i::new(0, 0, 0)),
 			self.sample_gradient_raw(cell + Vec3i::new(1, 0, 0))
 		);
 
-		let b = uvw.x.ease_linear(
+		let b = uvw.x.lerp(
 			self.sample_gradient_raw(cell + Vec3i::new(0, 1, 0)),
 			self.sample_gradient_raw(cell + Vec3i::new(1, 1, 0))
 		);
 
-		let c = uvw.x.ease_linear(
+		let c = uvw.x.lerp(
 			self.sample_gradient_raw(cell + Vec3i::new(0, 0, 1)),
 			self.sample_gradient_raw(cell + Vec3i::new(1, 0, 1))
 		);
 
-		let d = uvw.x.ease_linear(
+		let d = uvw.x.lerp(
 			self.sample_gradient_raw(cell + Vec3i::new(0, 1, 1)),
 			self.sample_gradient_raw(cell + Vec3i::new(1, 1, 1))
 		);
 
-		let ab = uvw.y.ease_linear(a, b);
-		let cd = uvw.y.ease_linear(c, d);
+		let ab = uvw.y.lerp(a, b);
+		let cd = uvw.y.lerp(c, d);
 
-		uvw.z.ease_linear(ab, cd)
+		uvw.z.lerp(ab, cd)
 	}
 
 	pub fn sample_raw(&self, p: Vec3i) -> f32 {

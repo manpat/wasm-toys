@@ -130,16 +130,16 @@ struct Wave {
 impl Wave {
 	fn new(wave_color: Color, wave_color_target: Color, y_offset: f32) -> Self {
 		Wave {
-			phase: rand().ease_linear(0.0, 2.0 * PI),
-			amp_phase: rand().ease_linear(0.0, 2.0 * PI),
-			amp_mod_phase: rand().ease_linear(0.0, 2.0 * PI),
-			freq_mod_phase: rand().ease_linear(0.0, 2.0 * PI),
+			phase: rand().lerp(0.0, 2.0 * PI),
+			amp_phase: rand().lerp(0.0, 2.0 * PI),
+			amp_mod_phase: rand().lerp(0.0, 2.0 * PI),
+			freq_mod_phase: rand().lerp(0.0, 2.0 * PI),
 
-			freq: rand().ease_linear(1.0 / 6.0, 1.0 / 3.0) * 2.0 * PI,
-			freq_mod: rand().ease_linear(1.0 / 12.0, 1.0 / 6.0) * 2.0 * PI,
-			freq_mod_amt: rand().ease_linear(1.0 / 12.0, 1.0 / 6.0) * 2.0 * PI,
-			amp_freq: rand().ease_linear(1.0 / 16.0, 1.0 / 9.0) * 2.0 * PI,
-			amp_mod_freq: rand().ease_linear(1.0 / 20.0, 1.0 / 8.0) * 2.0 * PI,
+			freq: rand().lerp(1.0 / 6.0, 1.0 / 3.0) * 2.0 * PI,
+			freq_mod: rand().lerp(1.0 / 12.0, 1.0 / 6.0) * 2.0 * PI,
+			freq_mod_amt: rand().lerp(1.0 / 12.0, 1.0 / 6.0) * 2.0 * PI,
+			amp_freq: rand().lerp(1.0 / 16.0, 1.0 / 9.0) * 2.0 * PI,
+			amp_mod_freq: rand().lerp(1.0 / 20.0, 1.0 / 8.0) * 2.0 * PI,
 
 			wave_color,
 			wave_color_target,
@@ -154,7 +154,7 @@ impl Wave {
 		self.freq_mod_phase += DT * self.freq_mod;
 		self.phase += DT * (self.freq + self.freq_mod_phase.sin() * self.freq_mod_amt) * 0.4;
 
-		self.wave_color = DT.ease_linear(self.wave_color, self.wave_color_target);
+		self.wave_color = DT.lerp(self.wave_color, self.wave_color_target);
 	}
 
 	fn build(&self, mb: &mut DynamicMesh<Vert>, aspect: f32, seg_width: f32) {

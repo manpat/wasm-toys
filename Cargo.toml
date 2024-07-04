@@ -6,9 +6,13 @@ edition = "2021"
 
 [dependencies]
 common = { git = "https://github.com/manpat/common-rs.git", branch = "cruft-resurrection" }
-toy = { git = "https://github.com/manpat/toy-rs.git", version = "0.4" }
+toy = { git = "https://github.com/manpat/toy-rs.git", rev = "baec9110eb93d814751697f9c3f85437c8d958dc" }
 failure = "0.1.8"
 getrandom = { version = "0.2", features = ["js"] }
+
+[patch.'https://github.com/manpat/common-rs.git']
+# the extra slash here is a hack to work around a known issue with [patch]
+common = { git = "https://github.com/manpat//common-rs.git", branch = "cruft-resurrection" }
 
 [profile.release]
 lto = true

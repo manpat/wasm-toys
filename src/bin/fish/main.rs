@@ -1,6 +1,3 @@
-#![feature(box_syntax)]
-#![feature(clamp)]
-
 extern crate wasm_toys as engine;
 use engine::prelude::*;
 
@@ -213,7 +210,7 @@ impl App {
 			}
 
 			PlayState::EnterSleep(t) => {
-				let amt = t.ease_exp_inout(max_fade, 1.0);
+				let amt = t.ease_exp_inout().lerp(max_fade, 1.0);
 				self.screen_transition_shader.set_uniform("fade_amount", amt);
 			}
 
@@ -222,7 +219,7 @@ impl App {
 			}
 
 			PlayState::LeaveSleep(t) => {
-				let amt = t.ease_exp_in(1.0, max_fade);
+				let amt = t.ease_exp_in().lerp(1.0, max_fade);
 				self.screen_transition_shader.set_uniform("fade_amount", amt);
 			}
 		}

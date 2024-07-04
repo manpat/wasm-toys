@@ -111,8 +111,8 @@ impl App {
 
 		let max_spread = part_spread.x.max(part_spread.y).max(part_spread.z).max(2.0);
 
-		self.camera_focal_point = (DT/3.0).ease_linear(self.camera_focal_point, part_center);
-		self.camera_dist = (DT/3.0).ease_linear(self.camera_dist, max_spread);
+		self.camera_focal_point = (DT/3.0).lerp(self.camera_focal_point, part_center);
+		self.camera_dist = (DT/3.0).lerp(self.camera_dist, max_spread);
 
 
 		let ori = Quat::new(Vec3::from_y(1.0), t/7.0)
@@ -140,7 +140,7 @@ impl App {
 		for p in self.particles.iter_mut() {
 			let v = Self::sample(&self.perlin, p.pos);
 
-			p.vel = (8.0*DT).ease_linear(p.vel, v);
+			p.vel = (8.0*DT).lerp(p.vel, v);
 			p.pos += (p.vel + rand_vec3() * 0.1) * DT;
 
 			p.lifetime -= DT * (p.pos.length() / 3.0);
@@ -182,7 +182,7 @@ impl App {
 
 				let dt = 1.0 / (1.0 + pos.length()*0.3);
 
-				let color = dt.ease_linear(bg_color, grid_color).to_vec3();
+				let color = dt.lerp(bg_color, grid_color).to_vec3();
 
 				self.grid_lines_mesh.add_vertices(&[
 					ColorVertex::new(pos - Vec3::from_y(100.0), color),

@@ -122,10 +122,10 @@ fn subdivide_joints(joints: Vec<(Vec2, f32)>, ratio: f32) -> Vec<(Vec2, f32)> {
 
 	for window in joints.windows(2) {
 		if let &[(pos_a, part_a), (pos_b, part_b)] = window {
-			let new_pos_0 = ratio.ease_linear(pos_a, pos_b);
-			let new_pos_1 = ratio.ease_linear(pos_b, pos_a);
-			let new_part_0 = ratio.ease_linear(part_a, part_b);
-			let new_part_1 = ratio.ease_linear(part_b, part_a);
+			let new_pos_0 = ratio.lerp(pos_a, pos_b);
+			let new_pos_1 = ratio.lerp(pos_b, pos_a);
+			let new_part_0 = ratio.lerp(part_a, part_b);
+			let new_part_1 = ratio.lerp(part_b, part_a);
 
 			subdivided_joints.extend_from_slice(&[
 				(new_pos_0, new_part_0),
@@ -344,7 +344,7 @@ impl Worm {
 				target += perp * wiggle_offset * dist;
 			}
 
-			*new = (2.0 * DT).ease_linear(*new, target);
+			*new = (2.0 * DT).lerp(*new, target);
 		}
 	}
 }
